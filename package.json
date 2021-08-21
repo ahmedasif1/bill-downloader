@@ -1,0 +1,15 @@
+{
+  "name": "bill-downloader",
+  "version": "1.0.0",
+  "description": "Lesco bill downloader",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ahmed",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.10",
+    "node-fetch": "^2.6.1"
+  }
+}
