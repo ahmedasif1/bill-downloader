@@ -5,10 +5,12 @@ const Cheerio  = require('cheerio')
 class BillDownloader {
 
     async start() {
-        console.log('Verifying directories');
+        Utils.log('Starting checking LESCO bills')
+        Utils.log('Verifying directories');
         Utils.setInitialConfig();
         const data = await Utils.readCustomerIds();
-        console.log(data)
+        Utils.log(`Customer Ids to check: ${data}`)
+        Utils.log("Reading existing Status")
         const existingStatus =  Utils.readStatus();
         console.log(existingStatus)
         const newStatus = {};
@@ -18,6 +20,7 @@ class BillDownloader {
         }
     
         Utils.saveStatus(newStatus);
+        Utils.log('Exiting now')
     }
 
     parseCookies(response) {
@@ -26,20 +29,20 @@ class BillDownloader {
     }
 
     async processId(customerId, existingStatus) {
-        console.log(`CustomerId: ${customerId}`);
+        Utils.log(`CustomerId: ${customerId}`);
         let response = await fetch('http://www.lesco.gov.pk/Modules/CustomerBill/CheckBill.asp', { method: 'get'});
         const cookies = this.parseCookies(response);
-        console.log(`Cookies: ${cookies}`);
+        Utils.log(`Cookies: ${cookies}`);
         const accountStatusUrl = await this.getAccountStatusUrl(cookies, customerId);
-        console.log(`Opening Account Status: ${accountStatusUrl}`);
+        Utils.log(`Opening Account Status: ${accountStatusUrl}`);
         const accountStatus = await this.getAccountStatus(cookies, accountStatusUrl);
-        console.log(`Account Status: ${JSON.stringify(accountStatus)}`);
+        Utils.log(`Account Status: ${JSON.stringify(accountStatus)}`);
     
         if (this.isStatusValid(accountStatus, existingStatus)) {
-            console.log(`Downloading bill: ${customerId}`);
+            Utils.log(`Downloading bill: ${customerId}`);
             await this.downloadBill(cookies, customerId, accountStatus.billMonth);
         } else {
-            console.log(`New bill not available yet`);
+            Utils.log(`New bill not available yet`);
         }
 
         return accountStatus;

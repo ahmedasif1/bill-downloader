@@ -5,7 +5,7 @@ const DOWNLOADS_PATH = 'downloads';
 const DATA_PATH = 'data';
 const STATUS_FILE_PATH =  `${DATA_PATH}/status.json`;
 
-module.exports = {
+const Utils = {
 
     setInitialConfig: () => {
         if(!fs.existsSync(DOWNLOADS_PATH)) {
@@ -47,7 +47,7 @@ module.exports = {
             fs.mkdirSync(`${DOWNLOADS_PATH}/${billMonthFinal}`);
         }
        
-        console.log(url);
+        Utils.log(url);
         let command = `wget -e robots=off "${url}"`;
     
         if(isPdf) {
@@ -55,21 +55,24 @@ module.exports = {
         } else {
             command = `mkdir -p ${id} && cd ${id} && ${command} -p -k -r -l 1 -R *.js`
         }
-        console.log(command);
+        Utils.log(command);
         exec(`cd ${DOWNLOADS_PATH}/${billMonthFinal} && ` + command, (error, stdout, stderr) => {
             if (error) {
-                // console.log(`error: ${error.message}`);
+                Utils.log(`error: ${error.message}`);
                 return;
             }
-            if (stderr) {
-                // console.log(`stderr: ${stderr}`);
-                return;
-            }
-            // console.log(`stdout: ${stdout}`);
-    });
+
+            Utils.log('Bill Downloaded');
+        });
     },
 
     saveStatus: (status) => {
         fs.writeFileSync(STATUS_FILE_PATH, JSON.stringify(status, null, 4));
+    },
+
+    log: (message) => {
+        console.log(`[${new Date().toISOString()}] - ${message}`);
     }
 }
+
+module.exports = Utils;
