@@ -2,9 +2,12 @@ const fs = require('fs');
 const readline = require('readline');
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
-const { exit } = require('process');
+const { exec } = require("child_process");
 
-customerIDs = [];
+const DOWNLOADS_PATH = 'downloads';
+
+
+let customerIDs = [];
 
 const readBillIds = async () => {
     customerIDs = [];
@@ -22,10 +25,10 @@ const readBillIds = async () => {
 }
 
 
-const testing = new Promise(async (resolve, reject) => {
+const start = new Promise(async (resolve, reject) => {
     const data = await readBillIds();
     console.log(data);
-    await [customerIDs[0]].forEach(async (id) => {
+    await customerIDs.forEach(async (id) => {
         await fetch('http://www.lesco.gov.pk/Modules/CustomerBill/CheckBill.asp', {
             method: 'get',
         }).then(async (response) => { 
@@ -56,9 +59,10 @@ const postRequest = async (firstResponse, id, downloadBill = false, cookies = nu
             if (downloadBill) {
                 const contentType = response.headers.raw()['content-type'][0];
                 if (contentType.includes('pdf')) {
-                    console.log('saving pdf');
+                    await saveWithWget(response.url, true, id);
                 } else {
                     // saving HTML
+                    await saveWithWget(response.url, false, id);
                 }
             } else {
                 const $ = cheerio.load(response)
@@ -92,7 +96,7 @@ const openAccountStatus = async (cookies, url) => {
         const tbody = table.childNodes.find(x => x.name == 'tbody');
         tbody.childNodes.filter(x => x.name == 'tr').forEach(row => {
             if (row.childNodes) {
-                cells = row.childNodes.filter(c => c.name == 'td');
+                const cells = row.childNodes.filter(c => c.name == 'td');
                 const value = getInnerValue(cells[0]);
                 if (value && value.toLowerCase() === 'due date') {
                     if (cells[1]) {
@@ -107,19 +111,34 @@ const openAccountStatus = async (cookies, url) => {
     return dueDate;
 }
 
-const downloadBill = (response) => {
-    
+const saveWithWget = async (url, isPdf, id) => {
+    console.log(url);
+    let command = `wget -e robots=off "${url}"`;
+
+    if(isPdf) {
+        command += ` -O ${id}.pdf`
+    } else {
+        command = `mkdir -p ${id} && cd ${id} && ${command} -p -k -r -l 1`
+    }
+
+    exec(`mkdir -p downloads && cd ${DOWNLOADS_PATH} && ` + command, (error, stdout, stderr) => {
+        if (error) {
+            console.log(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+            console.log(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout: ${stdout}`);
+});
 }
 
 
 function parseCookies(response) {
   const raw = response.headers.raw()['set-cookie'];
-  return raw.map((entry) => {
-    const parts = entry.split(';');
-    const cookiePart = parts[0];
-    return cookiePart;
-  }).join(';');
+  return raw.map((entry) => entry.split(';')[0]).join(';');
 }
 
 
-testing.then();
+start.then();
