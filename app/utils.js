@@ -1,6 +1,7 @@
 const fs = require('fs');
 const readline = require('readline');
 const { exec } = require("child_process");
+const { format } = require('date-fns');
 const DOWNLOADS_PATH = 'downloads';
 const DATA_PATH = 'data';
 const STATUS_FILE_PATH =  `${DATA_PATH}/status.json`;
@@ -71,7 +72,7 @@ const Utils = {
     },
 
     log: (message) => {
-        console.log(`[${new Date().toISOString()}] - ${message}`);
+        console.log(`[${format(new Date(), "yyyy-MM-dd kk:mm:ss")}] - ${message}`);
     }
 }
 
