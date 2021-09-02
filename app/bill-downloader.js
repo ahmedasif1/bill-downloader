@@ -56,7 +56,7 @@ class BillDownloader {
         const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
         const data = await response.text();
         const $ = await Cheerio.load(data)
-        return `http://www.lesco.gov.pk/Modules/CustomerBill/${$('a[href^="AccountStatus"]')['0'].attribs['href']}`;
+        return `http://www.lesco.gov.pk${ $('#ContentPane  a:nth-child(1)')[1].attribs['href']}`;
     }
     
     async downloadBill(cookies, customerId, billMonth) {
@@ -129,3 +129,4 @@ class BillDownloader {
 }
 
 module.exports = BillDownloader;
+
