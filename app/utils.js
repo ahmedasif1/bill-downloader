@@ -41,8 +41,8 @@ const Utils = {
         return require(`../${STATUS_FILE_PATH}`);
     },
 
-    saveWithWget: async (url, isPdf, id, billMonth) => {
-        const billMonthFinal = billMonth.replace(' ', '-');
+    saveWithWget: async (url, isPdf, id, billMonthIdentifier) => {
+        const billMonthFinal = billMonthIdentifier.replace(/\s+/g, '-');
        
         if (!fs.existsSync(`${DOWNLOADS_PATH}/${billMonthFinal}`)) {
             fs.mkdirSync(`${DOWNLOADS_PATH}/${billMonthFinal}`);

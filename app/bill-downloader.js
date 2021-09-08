@@ -40,7 +40,7 @@ class BillDownloader {
     
         if (this.isStatusValid(accountStatus, existingStatus)) {
             Utils.log(`Downloading bill: ${customerId}`);
-            await this.downloadBill(cookies, customerId, accountStatus.billMonth);
+            await this.downloadBill(cookies, customerId, accountStatus.dueDate);
         } else {
             Utils.log(`New bill not available yet`);
         }
@@ -59,11 +59,11 @@ class BillDownloader {
         return `http://www.lesco.gov.pk${ $('#ContentPane  a:nth-child(1)')[1].attribs['href']}`;
     }
     
-    async downloadBill(cookies, customerId, billMonth) {
+    async downloadBill(cookies, customerId, dueDate) {
         const response = await this.postRequest(cookies, customerId, 'btnViewBill=View/Download+Bill');
         const contentType = response.headers.raw()['content-type'][0];
         const isPdf = contentType.includes('pdf'); 
-        await Utils.saveWithWget(response.url, isPdf, customerId, billMonth);
+        await Utils.saveWithWget(response.url, isPdf, customerId, dueDate);
     }
     
 
