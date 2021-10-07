@@ -84,7 +84,9 @@ class BillDownloader {
             status.dueDate = this.getFieldValue(['due date'], rows);
             status.amount = this.getFieldValue(['amount', 'within'], rows);
             status.owner = this.getFieldValue(['customer name'], rows);
-            status.paid = !!this.getFieldValue(['payment', 'date'], rows);
+            const paymentDate = this.getFieldValue(['payment', 'date'], rows);
+            status.paid = paymentDate && paymentDate.trim() && paymentDate.toLowerCase() != 'n/a'
+              && paymentDate.toLowerCase() !='na' && !!paymentDate;
             status.billMonth = this.getFieldValue(['bill month'], rows);
 
         })
