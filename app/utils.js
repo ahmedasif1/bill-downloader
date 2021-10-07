@@ -57,12 +57,13 @@ const Utils = {
             command = `mkdir -p ${id} && cd ${id} && ${command} -p -k -r -l 1 -R *.js`
         }
         Utils.log(command);
-        exec(`cd ${DOWNLOADS_PATH}/${billMonthFinal} && ` + command, (error, stdout, stderr) => {
+        return exec(`cd ${DOWNLOADS_PATH}/${billMonthFinal} && ` + command, async (error, stdout, stderr) => {
             if (error) {
                 Utils.log(`error: ${error.message}`);
                 return;
+            } else if (!isPdf) {
+              await Utils.addHtmlExtension(`${DOWNLOADS_PATH}/${billMonthFinal}/${id}`);
             }
-
             Utils.log('Bill Downloaded');
         });
     },
@@ -73,6 +74,17 @@ const Utils = {
 
     log: (message) => {
         console.log(`[${format(new Date(), "yyyy-MM-dd kk:mm:ss")}] - ${message}`);
+    },
+    
+    addHtmlExtension: async(path) => {
+      const command = `cd ${path} && find . -name '*asp*' ! -name '*html' -execdir mv {} bill.html \\;`;
+      Utils.log(command);
+      exec(command, (error, stdout, stderr) => {
+          if (error) {
+              Utils.log(`error: ${error.message}`);
+              return;
+          }
+      });
     }
 }
 
