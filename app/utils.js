@@ -102,12 +102,11 @@ const Utils = {
         const { stdout, stderr } = await exec(command);
         if (stderr) {
             Utils.log(`error: ${stderr}`);
-        } else {
-            //set permissions
-            command = `chmod +r "${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf"`
-            Utils.log(command);
-            const { stdout, stderr } = await exec(command);
         }
+        //set permissions
+        command = `chmod +r "${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf"`
+        Utils.log(command);
+        const { stdout, stderr } = await exec(command);
     },
 
     addHtmlExtension: async (path) => {
