@@ -10,6 +10,15 @@ const tempDir = 'tmp';
 
 const Utils = {
 
+    chromeBinary: async () => {
+        let binaryName = 'google-chrome'
+        const { stdout } = await exec(`command -v google-chrome`);
+        if(!stdout) {
+            binaryName = 'chromium';
+        }
+        return binaryName;
+    },
+
     setInitialConfig: () => {
         if(!fs.existsSync(DOWNLOADS_PATH)) {
             fs.mkdirSync(DOWNLOADS_PATH);
@@ -85,14 +94,18 @@ const Utils = {
         
         await Utils.addHtmlExtension(tempDir);
         await Utils.fixCssForPrinting();
-        
-        const command = `chromium --headless --print-to-pdf="${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf" -virtual-time-budget=2000 \`find ${tempDir} -name bill.html\``
+        const chromePath = await Utils.chromeBinary();
+        let command = `${chromePath} --headless --print-to-pdf="${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf" -virtual-time-budget=2000 \`find ${tempDir} -name bill.html\``
         Utils.log(command);
         const { stdout, stderr } = await exec(command);
         if (stderr) {
-            Utils.log(`error: ${stderr.message}`);
+            Utils.log(`error: ${stderr}`);
+        } else {
+            //set permissions
+            command = `chmod +r "${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf"`
+            Utils.log(command);
+            const { stdout, stderr } = await exec(command);
         }
-
     },
 
     addHtmlExtension: async (path) => {
