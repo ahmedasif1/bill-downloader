@@ -12,10 +12,12 @@ const Utils = {
 
     chromeBinary: async () => {
         let binaryName = 'google-chrome'
-        const { stdout } = await exec(`command -v google-chrome`);
-        if(!stdout) {
+        try {
+            await exec(`command -v google-chrome`);
+        } catch (error) {
             binaryName = 'chromium';
         }
+
         return binaryName;
     },
 
