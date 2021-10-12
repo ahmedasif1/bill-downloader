@@ -106,7 +106,7 @@ const Utils = {
         //set permissions
         command = `chmod +r "${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf"`
         Utils.log(command);
-        const { stdout, stderr } = await exec(command);
+        await exec(command);
     },
 
     addHtmlExtension: async (path) => {
