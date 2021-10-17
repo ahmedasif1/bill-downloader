@@ -55,8 +55,9 @@ const Utils = {
     },
 
     saveWithWget: async (url, isPdf, id, billMonthIdentifier) => {
-        const billMonthFinal = billMonthIdentifier.replace(/\s+/g, '-');
-       
+        let billMonthFinal = billMonthIdentifier.replace(/\s+/g, '-');
+        const date = new Date(billMonthFinal+'Z');
+        billMonthFinal = format(date, 'yyyy-MM-dd'); 
         if (!fs.existsSync(`${DOWNLOADS_PATH}/${billMonthFinal}`)) {
             fs.mkdirSync(`${DOWNLOADS_PATH}/${billMonthFinal}`);
         }
