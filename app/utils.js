@@ -74,7 +74,7 @@ const Utils = {
         if(isPdf) {
             command = `cd ${DOWNLOADS_PATH}/${billMonthFinal} && ${command} -O ${id}.pdf`
         } else {
-            command = `mkdir -p ${tempDir} && cd ${tempDir} && rm -rf * && ${command} -p -k -r -l 1 -R *.js`
+            command = `mkdir -p ${tempDir} && cd ${tempDir} && touch 1 && rm -rf * && ${command} -p -k -r -l 1 -R *.js`
         }
         Utils.log(command);
         const { stdout, stderr } = await exec(command);
