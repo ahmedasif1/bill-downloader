@@ -130,7 +130,6 @@ const Utils = {
             let strToPrint = 'PDF file size is too small, ';
             if (tries < 2) {
                 console.log(strToPrint, 'retrying');
-                exit(1)
             } else {
                 console.log(strToPrint, 'throwing exception');
                 throw 'PDF file size too small';
@@ -146,7 +145,7 @@ const Utils = {
 
     printToPdf: async(downloadPath, TMP_DIR) => {
         const chromePath = await Utils.chromeBinary();
-        let command = `${chromePath} --headless --print-to-pdf="${downloadPath}" -virtual-time-budget=5000 \`find ${TMP_DIR} -name bill.html\``
+        let command = `${chromePath} --headless --print-to-pdf="${downloadPath}" \`find ${TMP_DIR} -name bill.html\``
         Utils.log(command);
         const { stdout, stderr } = await execPromise(command);
         if (stderr) {
