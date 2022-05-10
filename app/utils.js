@@ -10,7 +10,13 @@ const STATUS_FILE_PATH =  `${DATA_PATH}/status.json`;
 const TMP_DIR = 'tmp';
 
 const Utils = {
-
+    waitFor: async (timeMillis) => {
+        await new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve(null);
+            }, timeMillis)
+        })
+    },
     chromeBinary: async () => {
         let binaryName = 'google-chrome'
         try {
@@ -89,6 +95,8 @@ const Utils = {
             Utils.log('stderr:', stderr);
         }
         if (!isPdf) {
+            Utils.log('Sleeping for 1s');
+            await Utils.waitFor(1000);
             await Utils.convertHtmlToPdf(id, billMonthFinal);
         }
         Utils.log('Bill Downloaded');
