@@ -116,6 +116,8 @@ const Utils = {
         await Utils.addHtmlExtension(TMP_DIR);
         await Utils.fixCssForPrinting();
         const pdfPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf`;
+        Utils.log('Sleeping for 1s');
+        await Utils.waitFor(1000);
         await Utils.printToPdf(pdfPath, TMP_DIR);
 
         for( let tries = 0;; ++tries) {
