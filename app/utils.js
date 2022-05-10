@@ -130,6 +130,7 @@ const Utils = {
             let strToPrint = 'PDF file size is too small, ';
             if (tries < 2) {
                 console.log(strToPrint, 'retrying');
+                exit(1)
             } else {
                 console.log(strToPrint, 'throwing exception');
                 throw 'PDF file size too small';
