@@ -128,7 +128,7 @@ const Utils = {
 
         }
         //set permissions
-        command = `chmod +r "${pdfPath}"`;
+        const command = `chmod +r "${pdfPath}"`;
         Utils.log(command);
         await execPromise(command);
     },
