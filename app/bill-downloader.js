@@ -1,6 +1,6 @@
-const Utils = require("./utils");
-const fetch = require('node-fetch')
-const Cheerio  = require('cheerio')
+import { Utils } from "./utils.js";
+import fetch from "node-fetch";
+import * as Cheerio from 'cheerio';
 
 class BillDownloader {
 
@@ -135,5 +135,5 @@ class BillDownloader {
     } 
 }
 
-module.exports = BillDownloader;
+export { BillDownloader };
 

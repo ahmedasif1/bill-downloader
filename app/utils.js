@@ -1,8 +1,9 @@
-const fs = require('fs');
-const readline = require('readline');
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
-const { format, parse } = require('date-fns');
+import * as fs from 'fs';
+import * as readline from 'readline';
+import * as util from 'util';
+import { exec } from 'child_process'; 
+const execPromise = util.promisify(exec);
+import { format, parse } from  'date-fns';
 const DOWNLOADS_PATH = 'downloads';
 const DATA_PATH = 'data';
 const STATUS_FILE_PATH =  `${DATA_PATH}/status.json`;
@@ -13,7 +14,7 @@ const Utils = {
     chromeBinary: async () => {
         let binaryName = 'google-chrome'
         try {
-            await exec(`command -v google-chrome`);
+            await execPromise(`command -v google-chrome`);
         } catch (error) {
             binaryName = 'chromium';
         }
@@ -50,8 +51,11 @@ const Utils = {
         return customerIDs;
     },
 
-    readStatus: () => {
-        return require(`../${STATUS_FILE_PATH}`);
+    readStatus:() => {
+        if (!fs.existsSync(`../${STATUS_FILE_PATH}`)) {
+            return {};
+        }
+        return JSON.parse(fs.readFileSync(`../${STATUS_FILE_PATH}`));
     },
 
     saveWithWget: async (url, isPdf, id, billMonthIdentifier) => {
@@ -77,7 +81,7 @@ const Utils = {
             command = `mkdir -p ${TMP_DIR} && cd ${TMP_DIR} && touch 1 && rm -rf * && ${command} -p -k -r -l 1 -R *.js`
         }
         Utils.log(command);
-        const { stdout, stderr } = await exec(command);
+        const { stdout, stderr } = await execPromise(command);
         if (stdout) {
             Utils.log('stdout:', stdout);
         }
@@ -126,14 +130,14 @@ const Utils = {
         //set permissions
         command = `chmod +r "${pdfPath}"`;
         Utils.log(command);
-        await exec(command);
+        await execPromise(command);
     },
 
     printToPdf: async(downloadPath, TMP_DIR) => {
         const chromePath = await Utils.chromeBinary();
         let command = `${chromePath} --headless --print-to-pdf="${downloadPath}" -virtual-time-budget=5000 \`find ${TMP_DIR} -name bill.html\``
         Utils.log(command);
-        const { stdout, stderr } = await exec(command);
+        const { stdout, stderr } = await execPromise(command);
         if (stderr) {
             Utils.log(`error: ${stderr}`);
         }
@@ -142,7 +146,7 @@ const Utils = {
     addHtmlExtension: async (path) => {
         const command = `find ${path} -name '*asp*' ! -name '*html' -execdir mv {} bill.html \\;`;
         Utils.log(command);
-        const { stdout, stderr } = await exec(command);
+        const { stdout, stderr } = await execPromise(command);
         if (stderr) {
             Utils.log(`error: ${stderr.message}`);
         }
@@ -151,8 +155,8 @@ const Utils = {
     fixCssForPrinting: async () => {
         const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/padding-top:\\s*[[:digit:]]\\+mm;/padding-top:12mm;margin-left:12mm;/' {} +`;
         Utils.log(command);
-        await exec(command);
-        const { stdout, stderr } = exec(command)
+        await execPromise(command);
+        const { stdout, stderr } = execPromise(command)
         if (stderr) {
             Utils.log(`error: ${stderr.message}`);
         }
@@ -160,4 +164,4 @@ const Utils = {
 
 }
 
-module.exports = Utils;
+export { Utils };
