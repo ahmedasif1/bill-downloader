@@ -35,12 +35,17 @@ class BillDownloader {
         Utils.log(`Cookies: ${cookies}`);
         const accountStatusUrl = await this.getAccountStatusUrl(cookies, customerId);
         Utils.log(`Opening Account Status: ${accountStatusUrl}`);
-        const accountStatus = await this.getAccountStatus(cookies, accountStatusUrl);
+        let accountStatus = await this.getAccountStatus(cookies, accountStatusUrl);
         Utils.log(`Account Status: ${JSON.stringify(accountStatus)}`);
     
         if (this.isStatusValid(accountStatus, existingStatus)) {
             Utils.log(`Downloading bill: ${customerId}`);
-            await this.downloadBill(cookies, customerId, accountStatus.dueDate);
+            try {
+                await this.downloadBill(cookies, customerId, accountStatus.dueDate);
+            } catch (error) {
+                console.log('Exception ', error);
+                accountStatus = existingStatus;
+            }
         } else {
             Utils.log(`New bill not available yet`);
         }

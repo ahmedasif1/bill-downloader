@@ -6,7 +6,7 @@ const { format, parse } = require('date-fns');
 const DOWNLOADS_PATH = 'downloads';
 const DATA_PATH = 'data';
 const STATUS_FILE_PATH =  `${DATA_PATH}/status.json`;
-const tempDir = 'tmp';
+const TMP_DIR = 'tmp';
 
 const Utils = {
 
@@ -74,7 +74,7 @@ const Utils = {
         if(isPdf) {
             command = `cd ${DOWNLOADS_PATH}/${billMonthFinal} && ${command} -O ${id}.pdf`
         } else {
-            command = `mkdir -p ${tempDir} && cd ${tempDir} && touch 1 && rm -rf * && ${command} -p -k -r -l 1 -R *.js`
+            command = `mkdir -p ${TMP_DIR} && cd ${TMP_DIR} && touch 1 && rm -rf * && ${command} -p -k -r -l 1 -R *.js`
         }
         Utils.log(command);
         const { stdout, stderr } = await exec(command);
@@ -101,19 +101,42 @@ const Utils = {
 
     convertHtmlToPdf:  async (id,  billMonthFinal) => {
         
-        await Utils.addHtmlExtension(tempDir);
+        await Utils.addHtmlExtension(TMP_DIR);
         await Utils.fixCssForPrinting();
+        const pdfPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf`;
+        await Utils.printToPdf(pdfPath, TMP_DIR);
+
+        for( let tries = 0;; ++tries) {
+            const { size } = fs.statSync(pdfPath);
+            Utils.log('PDF file size :' + size);
+
+            if (size > 100000) {
+                break;
+            }
+            let strToPrint = 'PDF file size is too small, ';
+            if (tries < 2) {
+                console.log(strToPrint, 'retrying');
+            } else {
+                console.log(strToPrint, 'throwing exception');
+                throw 'PDF file size too small';
+            }
+            await Utils.printToPdf(pdfPath, TMP_DIR);
+
+        }
+        //set permissions
+        command = `chmod +r "${pdfPath}"`;
+        Utils.log(command);
+        await exec(command);
+    },
+
+    printToPdf: async(downloadPath, TMP_DIR) => {
         const chromePath = await Utils.chromeBinary();
-        let command = `${chromePath} --headless --print-to-pdf="${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf" -virtual-time-budget=2000 \`find ${tempDir} -name bill.html\``
+        let command = `${chromePath} --headless --print-to-pdf="${downloadPath}" -virtual-time-budget=5000 \`find ${TMP_DIR} -name bill.html\``
         Utils.log(command);
         const { stdout, stderr } = await exec(command);
         if (stderr) {
             Utils.log(`error: ${stderr}`);
         }
-        //set permissions
-        command = `chmod +r "${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf"`
-        Utils.log(command);
-        await exec(command);
     },
 
     addHtmlExtension: async (path) => {
@@ -126,7 +149,7 @@ const Utils = {
     },
 
     fixCssForPrinting: async () => {
-        const command = `find ${tempDir} -name 'bill.html' -exec sed -i 's/padding-top:\\s*[[:digit:]]\\+mm;/padding-top:12mm;margin-left:12mm;/' {} +`;
+        const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/padding-top:\\s*[[:digit:]]\\+mm;/padding-top:12mm;margin-left:12mm;/' {} +`;
         Utils.log(command);
         await exec(command);
         const { stdout, stderr } = exec(command)
