@@ -163,7 +163,7 @@ const Utils = {
     },
 
     fixCssForPrinting: async () => {
-        const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/padding-top:\\s*[[:digit:]]\\+mm;/padding-top:12mm;margin-left:12mm;/' {} +`;
+        const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/padding-top:\\s*[[:digit:]]\\+mm;/padding-top:12mm;margin-left:12mm;/' {} \\; -exec sed -i 's/<script.*<\\/script>//g;' {} \\;`;
         Utils.log(command);
         await execPromise(command);
         const { stdout, stderr } = execPromise(command)
