@@ -17,9 +17,8 @@ class BillDownloader {
     
         for (let id of data) {
             newStatus[id] = await this.processId(id, existingStatus[id]);
+            Utils.saveStatus(newStatus);
         }
-    
-        Utils.saveStatus(newStatus);
         Utils.log('Exiting now')
     }
 
