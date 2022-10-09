@@ -43,18 +43,10 @@ const Utils = {
     },
 
     readCustomerIds: async () => {
-        let customerIDs = [];
-
-        const file = readline.createInterface({
-            input: fs.createReadStream('customer_ids.txt'),
-            output: process.stdout,
-            terminal: false
-        });
-
-        for await (const line of file) {
-            customerIDs.push(line)
+        if (!fs.existsSync(`./customer_ids.json`)) {
+            return {};
         }
-        return customerIDs;
+        return JSON.parse(fs.readFileSync(`./customer_ids.json`));
     },
 
     readStatus: () => {
@@ -64,16 +56,20 @@ const Utils = {
         return JSON.parse(fs.readFileSync(`./${STATUS_FILE_PATH}`));
     },
 
-    saveWithWget: async (url, isPdf, id, billMonthIdentifier) => {
+    saveWithWget: async (url, isPdf, billData, billMonthIdentifier) => {
+        const id = billData['id']
         let billMonthFinal = billMonthIdentifier.replace(/\s+/g, '-');
         let date = null;
-        let dateFormats = ['dd-MMM-yyX', 'dd-MMM-yyX']
-        try {
-            date = parse(billMonthFinal + 'Z', dateFormats[0], new Date());
-        } catch (ex) {
+        let dateFormats = ['dd-MMM-yyX', 'dd-MM-yyyyX']
+
+        console.log(`Parsing date ${billMonthFinal + 'Z'} with format ${dateFormats[0]}`)
+        date = parse(billMonthFinal + 'Z', dateFormats[0], new Date());
+        if (date == 'Invalid Date') {
+            console.log(`Parsing date ${billMonthFinal + 'Z'} with format ${dateFormats[1]}`)
             date = parse(billMonthFinal + 'Z', dateFormats[1], new Date());
         }
 
+        console.log('Date value: ', date)
         billMonthFinal = format(date, 'yyyy-MM-dd');
         if (!fs.existsSync(`${DOWNLOADS_PATH}/${billMonthFinal}`)) {
             fs.mkdirSync(`${DOWNLOADS_PATH}/${billMonthFinal}`);
@@ -98,7 +94,7 @@ const Utils = {
         if (!isPdf) {
             Utils.log('Sleeping for 1s');
             await Utils.waitFor(1000);
-            await Utils.convertHtmlToPdf(id, billMonthFinal);
+            await Utils.convertHtmlToPdf(billData, billMonthFinal);
         }
         Utils.log('Bill Downloaded');
 
@@ -113,10 +109,13 @@ const Utils = {
         console.log(`[${format(new Date(), "yyyy-MM-dd kk:mm:ss")}] - ${message}`);
     },
 
-    convertHtmlToPdf: async (id, billMonthFinal) => {
-
+    convertHtmlToPdf: async (billData, billMonthFinal) => {
+        const id = billData['id']
         await Utils.addHtmlExtension(TMP_DIR);
-        await Utils.fixCssForPrinting();
+        console.log('Bill data in convertHtmlToPdf: ', billData);
+        if (billData['format'] === 'html') {
+            await Utils.fixCssForPrinting();
+        }
         const pdfPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf`;
         Utils.log('Sleeping for 1s');
         await Utils.waitFor(1000);

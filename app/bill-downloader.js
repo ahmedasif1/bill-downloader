@@ -9,14 +9,15 @@ class BillDownloader {
         Utils.log('Verifying directories');
         Utils.setInitialConfig();
         const data = await Utils.readCustomerIds();
-        Utils.log(`Customer Ids to check: ${data}`)
+        Utils.log('Customer Ids to check', data)
         Utils.log("Reading existing Status")
         const existingStatus = Utils.readStatus();
         console.log(existingStatus)
         const newStatus = { ...existingStatus };
 
-        for (let id of data) {
-            newStatus[id] = await this.processId(id, existingStatus[id]);
+        for (let billData of data) {
+            const id = billData['id'];
+            newStatus[id] = await this.processId(billData, existingStatus[id]);
             Utils.saveStatus(newStatus);
         }
         Utils.log('Exiting now')
@@ -27,7 +28,8 @@ class BillDownloader {
         return raw.map((entry) => entry.split(';')[0]).join(';');
     }
 
-    async processId(customerId, existingStatus) {
+    async processId(billData, existingStatus) {
+        const customerId = billData['id'];
         Utils.log(`CustomerId: ${customerId}`);
         let response = await fetch('http://www.lesco.gov.pk/Modules/CustomerBill/CheckBill.asp', { method: 'get' });
         const cookies = this.parseCookies(response);
@@ -40,7 +42,7 @@ class BillDownloader {
         if (this.isStatusValid(accountStatus, existingStatus)) {
             Utils.log(`Downloading bill: ${customerId}`);
             try {
-                await this.downloadBill(cookies, customerId, accountStatus.dueDate);
+                await this.downloadBill(cookies, billData, accountStatus.dueDate);
             } catch (error) {
                 console.log('Exception ', error);
                 accountStatus = existingStatus;
@@ -63,11 +65,12 @@ class BillDownloader {
         return `http://www.lesco.gov.pk${$('#ContentPane  a:nth-child(1)')[1].attribs['href']}`;
     }
 
-    async downloadBill(cookies, customerId, dueDate) {
+    async downloadBill(cookies, billData, dueDate) {
+        const customerId = billData['id'];
         const response = await this.postRequest(cookies, customerId, 'btnViewBill=View/Download+Bill');
         const contentType = response.headers.raw()['content-type'][0];
         const isPdf = contentType.includes('pdf');
-        await Utils.saveWithWget(response.url, isPdf, customerId, dueDate);
+        await Utils.saveWithWget(response.url, isPdf, billData, dueDate);
     }
 
 
