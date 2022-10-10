@@ -4,3 +4,5 @@ data
 logs
 .vscode
 tmp
+customer_ids.json
+customer_ids.txt
