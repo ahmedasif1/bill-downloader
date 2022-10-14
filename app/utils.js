@@ -55,8 +55,9 @@ const Utils = {
         return JSON.parse(fs.readFileSync(`./${STATUS_FILE_PATH}`));
     },
 
-    downloadWithCurl: async (pdfUrl, cookies, fileName) => {
-        const command = `curl ${pdfUrl} -H 'Cookie: ${cookies}' -o ${DOWNLOADS_PATH}/${fileName}`;
+    downloadWithCurl: async (pdfUrl, cookies, billData, billMonthDate, fileName) => {
+        const billMonthFinal = format(billMonthDate, 'yyyy-MM');
+        const command = `curl '${pdfUrl}' -H 'Cookie: ${cookies}' -o ${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}/${fileName}`;
         const { stdout, stderr } = await execPromise(command);
         console.log(stdout);
         console.log(stderr);

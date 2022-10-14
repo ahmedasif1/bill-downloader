@@ -18,23 +18,22 @@ class BillDownloader {
         console.log(existingStatus)
 
         for(const billType of Object.keys(data)) {
-            const newStatus = { ...existingStatus[billType] };
 
             switch(billType) {
                 case PTCL:
                     try {
-                        await this.handlePtclBills(data[billType], newStatus)
+                        await this.handlePtclBills(data[billType], existingStatus)
                     } catch (e) {
-                        console.log('Exception caught while fetching lesco bill')
+                        console.log('Exception caught while fetching ptcl bill')
                         console.log(e);
                     }
                     break;
                 case LESCO:
                     try {
-                        await this.handleLescoBills(data[billType], newStatus);
+                        await this.handleLescoBills(data[billType], existingStatus);
                     }
                     catch (e) {
-                        console.log('Exception caught while fetching ptcl bill')
+                        console.log('Exception caught while fetching lesco bill')
                         console.log(e);
                     } 
                     break;
@@ -44,21 +43,25 @@ class BillDownloader {
         Utils.log('Exiting now')
     }
 
-    async handleLescoBills(data, newStatus) {
+    async handleLescoBills(data, fullStatus) {
+        const newStatus = { ...fullStatus[LESCO] };
         const lescoDownloader = new Lesco();
         for (let billData of data) {
             const id = billData['id'];
             newStatus[id] = await lescoDownloader.processId(billData, newStatus[id]);
-            // Utils.saveStatus(newStatus);
+            fullStatus[LESCO] = newStatus;
+            Utils.saveStatus(fullStatus);
         }
     }
 
-    async handlePtclBills(data, newStatus) {
+    async handlePtclBills(data, fullStatus) {
+        const newStatus = { ...fullStatus[PTCL] };
         const ptclDownloader = new Ptcl();
         for (let billData of data) {
             const id = billData['phone'];
             newStatus[id] = await ptclDownloader.processId(billData, newStatus[id]);
-            // Utils.saveStatus(newStatus);
+            fullStatus[PTCL] = newStatus;
+            Utils.saveStatus(fullStatus);
         }
     }
 
