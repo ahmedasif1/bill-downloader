@@ -57,10 +57,18 @@ const Utils = {
 
     downloadWithCurl: async (pdfUrl, cookies, billData, billMonthDate, fileName) => {
         const billMonthFinal = format(billMonthDate, 'yyyy-MM');
-        const command = `curl '${pdfUrl}' -H 'Cookie: ${cookies}' -o ${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}/${fileName}`;
+        let command = `curl '${pdfUrl}' -H 'Cookie: ${cookies}' -o ${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}/${fileName}`;
+        console.log(command);
         const { stdout, stderr } = await execPromise(command);
+                
         console.log(stdout);
         console.log(stderr);
+        
+        //set permissions
+        command = `chmod +r "${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}/${fileName}"`;
+        Utils.log(command);
+        await execPromise(command);
+
     },
 
     saveWithWget: async (url, isPdf, billData, billMonthDate) => {

@@ -23,7 +23,7 @@ class Ptcl {
     let response = await this.submitForm(data);
     const { billUrl, details } = await this.followRedirect(response);
     console.log(details);
-    if (status['billMonth'] && details['billMonth'] === status['billMonth']) {
+    if (status && status['billMonth'] && details['billMonth'] === status['billMonth']) {
       console.log('New bill does not exist');
     } else {
       await this.downloadPdf(billUrl, details);
@@ -83,7 +83,7 @@ class Ptcl {
   async downloadPdf(downloadUrl, accountStatus) {
     console.log('Downloading bill for phone:', this.billData['phone']);
     const parsedBillMonth = parse(`10-${accountStatus.billMonth}`, 'dd-MM-yyyy', new Date());
-    Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}.pdf`)
+    return Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}.pdf`)
   }
 
   async readHiddenFields(response) {
