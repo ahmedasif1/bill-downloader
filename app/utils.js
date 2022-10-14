@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as readline from 'readline';
 import * as util from 'util';
 import { exec } from 'child_process';
 const execPromise = util.promisify(exec);
@@ -10,11 +9,11 @@ const STATUS_FILE_PATH = `${DATA_PATH}/status.json`;
 const TMP_DIR = 'tmp';
 
 const Utils = {
-    waitFor: async (timeMillis) => {
+    waitFor: async (timeMilliseconds) => {
         await new Promise((resolve, reject) => {
             setTimeout(() => {
                 resolve(null);
-            }, timeMillis)
+            }, timeMilliseconds)
         })
     },
     chromeBinary: async () => {
@@ -56,30 +55,29 @@ const Utils = {
         return JSON.parse(fs.readFileSync(`./${STATUS_FILE_PATH}`));
     },
 
-    saveWithWget: async (url, isPdf, billData, billMonthIdentifier) => {
+    downloadWithCurl: async (pdfUrl, cookies, fileName) => {
+        const command = `curl ${pdfUrl} -H 'Cookie: ${cookies}' -o ${DOWNLOADS_PATH}/${fileName}`;
+        const { stdout, stderr } = await execPromise(command);
+        console.log(stdout);
+        console.log(stderr);
+    },
+
+    saveWithWget: async (url, isPdf, billData, billMonthDate) => {
         const id = billData['id']
-        let billMonthFinal = billMonthIdentifier.replace(/\s+/g, '-');
-        let date = null;
-        let dateFormats = ['dd-MMM-yyX', 'dd-MM-yyyyX']
 
-        console.log(`Parsing date ${billMonthFinal + 'Z'} with format ${dateFormats[0]}`)
-        date = parse(billMonthFinal + 'Z', dateFormats[0], new Date());
-        if (date == 'Invalid Date') {
-            console.log(`Parsing date ${billMonthFinal + 'Z'} with format ${dateFormats[1]}`)
-            date = parse(billMonthFinal + 'Z', dateFormats[1], new Date());
-        }
+        console.log('Date value: ', billMonthDate)
+        const billMonthFinal = format(billMonthDate, 'yyyy-MM');
 
-        console.log('Date value: ', date)
-        billMonthFinal = format(date, 'yyyy-MM-dd');
-        if (!fs.existsSync(`${DOWNLOADS_PATH}/${billMonthFinal}`)) {
-            fs.mkdirSync(`${DOWNLOADS_PATH}/${billMonthFinal}`);
+        const folderPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
+        if (!fs.existsSync(folderPath)) {
+            fs.mkdirSync(folderPath, { recursive: true });
         }
 
         Utils.log(url);
         let command = `wget -e robots=off "${url}"`;
 
         if (isPdf) {
-            command = `cd ${DOWNLOADS_PATH}/${billMonthFinal} && ${command} -O ${id}.pdf`
+            command = `cd ${folderPath} && ${command} -O ${id}.pdf`
         } else {
             command = `mkdir -p ${TMP_DIR} && cd ${TMP_DIR} && touch 1 && rm -rf * && ${command} -p -k -r -l 1 -R *.js`
         }
@@ -94,7 +92,7 @@ const Utils = {
         if (!isPdf) {
             Utils.log('Sleeping for 1s');
             await Utils.waitFor(1000);
-            await Utils.convertHtmlToPdf(billData, billMonthFinal);
+            await Utils.convertHtmlToPdf(billData, folderPath);
         }
         Utils.log('Bill Downloaded');
 
@@ -109,14 +107,14 @@ const Utils = {
         console.log(`[${format(new Date(), "yyyy-MM-dd kk:mm:ss")}] - ${message}`);
     },
 
-    convertHtmlToPdf: async (billData, billMonthFinal) => {
+    convertHtmlToPdf: async (billData, folderPath) => {
         const id = billData['id']
         await Utils.addHtmlExtension(TMP_DIR);
         console.log('Bill data in convertHtmlToPdf: ', billData);
         if (billData['format'] === 'html') {
             await Utils.fixCssForPrinting();
         }
-        const pdfPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${id}.pdf`;
+        const pdfPath = `${folderPath}/${id}.pdf`;
         Utils.log('Sleeping for 1s');
         await Utils.waitFor(1000);
         await Utils.printToPdf(pdfPath, TMP_DIR);
@@ -148,7 +146,7 @@ const Utils = {
         const chromePath = await Utils.chromeBinary();
         let command = `${chromePath} --headless --print-to-pdf="${downloadPath}" -virtual-time-budget=200000 \`find ${TMP_DIR} -name bill.html\``
         Utils.log(command);
-        const { stdout, stderr } = await execPromise(command);
+        const { _, stderr } = await execPromise(command);
         if (stderr) {
             Utils.log(`error: ${stderr}`);
         }
@@ -157,7 +155,7 @@ const Utils = {
     addHtmlExtension: async (path) => {
         const command = `find ${path} -name '*asp*' ! -name '*html' -execdir mv {} bill.html \\;`;
         Utils.log(command);
-        const { stdout, stderr } = await execPromise(command);
+        const { _, stderr } = await execPromise(command);
         if (stderr) {
             Utils.log(`error: ${stderr.message}`);
         }
@@ -167,10 +165,15 @@ const Utils = {
         const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/padding-top:\\s*[[:digit:]]\\+mm;/padding-top:12mm;margin-left:12mm;/' {} \\; -exec sed -i 's/<script.*<\\/script>//g;' {} \\;`;
         Utils.log(command);
         await execPromise(command);
-        const { stdout, stderr } = execPromise(command)
+        const { _, stderr } = execPromise(command)
         if (stderr) {
             Utils.log(`error: ${stderr.message}`);
         }
+    },
+
+    parseCookies(response) {
+        const raw = response.headers.raw()['set-cookie'];
+        return raw.map((entry) => entry.split(';')[0]).join(';');
     }
 
 }
