@@ -1,6 +1,6 @@
-# LESCO Bill Downloader
+# LESCO & PTCL Bill Downloader
 
-This project scrapes the website lesco.gov.pk and dbill.ptcl.net.pk to download bills either as pdf.
+This project scrapes the website lesco.gov.pk and dbill.ptcl.net.pk to download bills either as pdf for keeping as a record or downloading.
 
 ## Dependencies
 - wget
