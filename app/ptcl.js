@@ -22,9 +22,10 @@ class Ptcl {
     this.billData = data;
     let response = await this.submitForm(data);
     const { billUrl, details } = await this.followRedirect(response);
-    console.log(details);
-    if (status && status['billMonth'] && details['billMonth'] === status['billMonth']) {
-      console.log('New bill does not exist');
+    Utils.log(`Account Status: ${JSON.stringify(details)}`);
+
+    if (status?.['billMonth'] && details['billMonth'] === status['billMonth']) {
+      Utils.log('New bill does not exist');
     } else {
       await this.downloadPdf(billUrl, details);
     }
@@ -53,13 +54,12 @@ class Ptcl {
 
   async followRedirect(response) {
     this.cookies = Utils.parseCookies(response);
-    const newLocation = response.headers.raw()['location'];
-    console.log('New Location', newLocation);
+    const newLocation = `https://dbill.ptcl.net.pk${response.headers.raw()['location']}`;
     const headers = new Headers();
     headers.append('Cookie', this.cookies);
     headers.append('Host', 'dbill.ptcl.net.pk');
     headers.append('Accept', '*/*');
-    const billResponse = await fetch(`https://dbill.ptcl.net.pk${newLocation}`, { headers: headers });
+    const billResponse = await fetch(newLocation, { headers: headers });
     return this.getBillDetail(await billResponse.text());
   }
 
@@ -81,7 +81,7 @@ class Ptcl {
   }
 
   async downloadPdf(downloadUrl, accountStatus) {
-    console.log('Downloading bill for phone:', this.billData['phone']);
+    Utils.log('Downloading bill for phone:', this.billData['phone']);
     const parsedBillMonth = parse(`10-${accountStatus.billMonth}`, 'dd-MM-yyyy', new Date());
     return Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}.pdf`)
   }
