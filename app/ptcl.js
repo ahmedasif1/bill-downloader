@@ -10,10 +10,10 @@ const HIDDEN_FIELDS = {
   __EVENTVALIDATION: '__EVENTVALIDATION'
 };
 
-const BILL_MONTH = 'ctl00_ContentPlaceHolder1_lblBillingMonth';
-const BILL_NAME = 'ctl00_ContentPlaceHolder1_lblName';
-const DUE_DATE = 'ctl00_ContentPlaceHolder1_lblDueDate';
-const AMOUNT = 'ctl00_ContentPlaceHolder1_lblppPayableByDueDate';
+const BILL_MONTH = '#ctl00_ContentPlaceHolder1_dBill > table > tbody > tr > td:nth-child(2) > table:nth-child(2) > tbody > tr:nth-child(2) > td > div > div:nth-child(2) > table > tbody > tr:nth-child(14) > td:nth-child(3) > span';
+const BILL_NAME = '#ctl00_ContentPlaceHolder1_dBill > table > tbody > tr > td:nth-child(2) > table:nth-child(2) > tbody > tr:nth-child(2) > td > div > div:nth-child(2) > table > tbody > tr:nth-child(11) > td:nth-child(2) > div > div:nth-child(2) > table > tbody > tr:nth-child(3) > td:nth-child(2) > span';
+const DUE_DATE = '#ctl00_ContentPlaceHolder1_dBill > table > tbody > tr > td:nth-child(2) > table:nth-child(2) > tbody > tr:nth-child(2) > td > div > div:nth-child(2) > table > tbody > tr:nth-child(16) > td:nth-child(3) > span';
+const AMOUNT = '#ctl00_ContentPlaceHolder1_dBill > table > tbody > tr > td:nth-child(2) > table:nth-child(2) > tbody > tr:nth-child(2) > td > div > div:nth-child(2) > table > tbody > tr:nth-child(17) > td:nth-child(3) > span';
 const BILL_PDF_ID = 'ctl00_ContentPlaceHolder1_hplPrintBill';
 
 class Ptcl {
@@ -65,12 +65,11 @@ class Ptcl {
 
   getBillDetail(htmlText) {
     const $ = Cheerio.load(htmlText);
-
     const details = {
-      dueDate: $(`#${DUE_DATE}`).text(),
-      name: $(`#${BILL_NAME}`).text(),
-      amount: $(`#${AMOUNT}`).text(),
-      billMonth: $(`#${BILL_MONTH}`).text()
+      dueDate: $(`${DUE_DATE}`).text(),
+      name: $(`${BILL_NAME}`).text(),
+      amount: $(`${AMOUNT}`).text(),
+      billMonth: $(`${BILL_MONTH}`).text()
     }
     let billUrl = $(`#${BILL_PDF_ID}`)[0].attribs.href;
     billUrl = `https://dbill.ptcl.net.pk/${billUrl}`;
@@ -82,7 +81,7 @@ class Ptcl {
 
   async downloadPdf(downloadUrl, accountStatus) {
     Utils.log('Downloading bill for phone:', this.billData['phone']);
-    const parsedBillMonth = parse(`10-${accountStatus.billMonth}`, 'dd-MM-yyyy', new Date());
+    const parsedBillMonth = parse(`10-${accountStatus.billMonth}`, 'dd-MMM. yyyy', new Date());
     return Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}.pdf`)
   }
 
