@@ -31,13 +31,13 @@ class Lesco {
   }
 
   isStatusValid(status, existingStatus) {
-    return (status && status.dueDate && (!existingStatus || status.dueDate != existingStatus.dueDate));
+    return (status?.dueDate && (!existingStatus || status.dueDate != existingStatus.dueDate));
   }
 
   async getAccountStatusUrl(cookies, customerId) {
     const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
     const data = await response.text();
-    const $ = await Cheerio.load(data)
+    const $ = Cheerio.load(data)
     return `http://www.lesco.gov.pk${$('#ContentPane  a:nth-child(1)')[1].attribs['href']}`;
   }
 
@@ -50,16 +50,16 @@ class Lesco {
   }
 
   parseBillMonth(billMonth) {
-    console.log('Bill Month: ', billMonth)
+    Utils.log('Bill Month: ', billMonth)
     let billMonthFinal = billMonth.replace(/\s+/g, '-');
 
     let date = null;
     let dateFormats = ['dd-MM-yyyy', 'dd-LLL-yy'];
 
-    console.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[0]}`)
+    Utils.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[0]}`)
     date = parse(`10-${billMonthFinal}`, dateFormats[0], new Date());
     if (date == 'Invalid Date') {
-        console.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[1]}`)
+        Utils.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[1]}`)
         date = parse(`10-${billMonthFinal}`, dateFormats[1], new Date());
     }
     return date;
@@ -84,7 +84,7 @@ class Lesco {
         status.amount = this.getFieldValue(['amount', 'within'], rows);
         status.owner = this.getFieldValue(['customer name'], rows);
         const paymentDate = this.getFieldValue(['payment', 'date'], rows);
-        status.paid = paymentDate && paymentDate.trim() && paymentDate.toLowerCase() != 'n/a'
+        status.paid = paymentDate?.trim() && paymentDate.toLowerCase() != 'n/a'
           && paymentDate.toLowerCase() != 'na' && !!paymentDate;
         status.billMonth = this.getFieldValue(['bill month'], rows);
 
