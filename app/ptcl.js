@@ -1,7 +1,7 @@
 import * as Cheerio from 'cheerio';
 import { parse } from 'date-fns';
-import fetch, { FormData, Headers } from "node-fetch";
-import { Utils } from "./utils.js";
+import fetch, { FormData, Headers } from 'node-fetch';
+import { Utils } from './utils.js';
 
 
 const HIDDEN_FIELDS = {
@@ -70,29 +70,29 @@ class Ptcl {
       name: $(`${BILL_NAME}`).text(),
       amount: $(`${AMOUNT}`).text(),
       billMonth: $(`${BILL_MONTH}`).text()
-    }
+    };
     let billUrl = $(`#${BILL_PDF_ID}`)[0].attribs.href;
     billUrl = `https://dbill.ptcl.net.pk/${billUrl}`;
     return {
       details,
       billUrl
-    }
+    };
   }
 
   async downloadPdf(downloadUrl, accountStatus) {
     Utils.log('Downloading bill for phone:', this.billData['phone']);
     const parsedBillMonth = parse(`10-${accountStatus.billMonth}`, 'dd-MMM. yyyy', new Date());
-    return Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}.pdf`)
+    return Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}.pdf`);
   }
 
   async readHiddenFields(response) {
     const data = await response.text();
     const $ = Cheerio.load(data);
-    const fields = {}
+    const fields = {};
     for (let id of Object.keys(HIDDEN_FIELDS)) {
       fields[id] = $(`#${id}`)[0].attribs.value;
     }
     this.hiddenFields = fields;
   }
 }
-export { Ptcl }
+export { Ptcl };

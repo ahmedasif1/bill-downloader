@@ -1,5 +1,5 @@
-import { Utils } from "./utils.js";
-import fetch from "node-fetch";
+import { Utils } from './utils.js';
+import fetch from 'node-fetch';
 import * as Cheerio from 'cheerio';
 import { parse } from 'date-fns';
 
@@ -24,7 +24,7 @@ class Lesco {
         accountStatus = existingStatus;
       }
     } else {
-      Utils.log(`New bill not available yet`);
+      Utils.log('New bill not available yet');
     }
 
     return accountStatus;
@@ -37,7 +37,7 @@ class Lesco {
   async getAccountStatusUrl(cookies, customerId) {
     const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
     const data = await response.text();
-    const $ = Cheerio.load(data)
+    const $ = Cheerio.load(data);
     return `http://www.lesco.gov.pk${$('#ContentPane  a:nth-child(1)')[1].attribs['href']}`;
   }
 
@@ -50,17 +50,17 @@ class Lesco {
   }
 
   parseBillMonth(billMonth) {
-    Utils.log('Bill Month: ', billMonth)
+    Utils.log('Bill Month: ', billMonth);
     let billMonthFinal = billMonth.replace(/\s+/g, '-');
 
     let date = null;
     let dateFormats = ['dd-MM-yyyy', 'dd-LLL-yy'];
 
-    Utils.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[0]}`)
+    Utils.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[0]}`);
     date = parse(`10-${billMonthFinal}`, dateFormats[0], new Date());
     if (date == 'Invalid Date') {
-        Utils.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[1]}`)
-        date = parse(`10-${billMonthFinal}`, dateFormats[1], new Date());
+      Utils.log(`Parsing date 10-${billMonthFinal} with format ${dateFormats[1]}`);
+      date = parse(`10-${billMonthFinal}`, dateFormats[1], new Date());
     }
     return date;
   }
@@ -75,7 +75,7 @@ class Lesco {
     })
       .then(response => response.text())
       .then(async (response) => {
-        const $ = Cheerio.load(response)
+        const $ = Cheerio.load(response);
         const table = $('.MemTab')[0];
         const tbody = table.childNodes.find(x => x.name == 'tbody');
         const rows = tbody.childNodes.filter(x => x.name == 'tr');
@@ -88,7 +88,7 @@ class Lesco {
           && paymentDate.toLowerCase() != 'na' && !!paymentDate;
         status.billMonth = this.getFieldValue(['bill month'], rows);
 
-      })
+      });
     return status;
   }
 
@@ -125,7 +125,7 @@ class Lesco {
 
   getInnerValue(node) {
     if (node.childNodes && node.childNodes.length > 0) {
-      return this.getInnerValue(node.childNodes[0])
+      return this.getInnerValue(node.childNodes[0]);
     }
     return node.data;
   }
