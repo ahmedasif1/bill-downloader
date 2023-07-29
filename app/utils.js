@@ -21,8 +21,8 @@ const Utils = {
     try {
       await execPromise('command -v google-chrome');
     } catch (error) {
-            binaryName = 'chromium';
-        }
+      binaryName = 'chromium';
+    }
 
     return binaryName;
   },
@@ -55,9 +55,17 @@ const Utils = {
     return JSON.parse(fs.readFileSync(`./${STATUS_FILE_PATH}`));
   },
 
+  makeFolder: (folderPath) => {
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true });
+    }
+  },
+
   downloadWithCurl: async (pdfUrl, cookies, billData, billMonthDate, fileName) => {
     const billMonthFinal = format(billMonthDate, 'yyyy-MM');
-    let command = `curl '${pdfUrl}' -H 'Cookie: ${cookies}' -o ${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}/${fileName}`;
+    const folderPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
+    Utils.makeFolder(folderPath);
+    let command = `curl '${pdfUrl}' -H 'Cookie: ${cookies}' -o ${folderPath}/${fileName}`;
     console.log(command);
     const { stdout, stderr } = await execPromise(command);
                 
@@ -65,7 +73,7 @@ const Utils = {
     console.log(stderr);
         
     //set permissions
-    command = `chmod +r "${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}/${fileName}"`;
+    command = `chmod +r "${folderPath}/${fileName}"`;
     Utils.log(command);
     await execPromise(command);
 
@@ -78,9 +86,7 @@ const Utils = {
     const billMonthFinal = format(billMonthDate, 'yyyy-MM');
 
     const folderPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
-    if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true });
-    }
+    Utils.makeFolder(folderPath);
 
     Utils.log(url);
     let command = `wget -e robots=off "${url}"`;
