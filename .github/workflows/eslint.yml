@@ -11,8 +11,7 @@ name: ESLint
 
 on:
   pull_request:
-    types: [opened, reopened, edited]
-    
+
 jobs:
   eslint:
     name: Run eslint scanning
