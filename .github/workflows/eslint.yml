@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: 16
           cache: 'npm'
+      
+      - name: Npm install
+        run: npm install
 
       - name: Run ESLint
         run: npx eslint .
