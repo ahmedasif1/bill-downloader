@@ -6,7 +6,7 @@ const PTCL = 'ptcl';
 const LESCO = 'lesco';
 class BillDownloader {
   async start() {
-    Utils.log('Starting checking bills')
+    Utils.log('Starting checking bills');
 
     Utils.log('Verifying directories');
     Utils.setInitialConfig();
