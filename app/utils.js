@@ -186,18 +186,13 @@ const Utils = {
 
   fixCssForPrinting: async () => {
     // these commands work OK on linux, not on macOS/BSD
-    const commands = [
-      `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/<script.*<\\/script>//g;' {} \\;`,
-      `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/ChartImg.axd\\S\\+"/ChartImg.png"/g;' {} \\;`
-    ];
-    for (const command of commands) {
-      Utils.log(command);
-      const { stderr, stdout } = await execPromise(command);
-      if (stderr) {
-        Utils.log(`error: ${stderr}`);
-      }
-      Utils.log(stdout);
+    const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/ChartImg.axd\\S\\+"/ChartImg.png"/g;' {} \\;`;
+    Utils.log(command);
+    const { stderr, stdout } = await execPromise(command);
+    if (stderr) {
+      Utils.log(`error: ${stderr}`);
     }
+    Utils.log(stdout);
   },
 
   parseCookies(response) {
