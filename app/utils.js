@@ -125,10 +125,9 @@ const Utils = {
   convertHtmlToPdf: async (billData, folderPath) => {
     const id = billData['id'];
     await Utils.addHtmlExtension(TMP_DIR);
-    console.log('Bill data in convertHtmlToPdf: ', billData);
-    if (billData['format'] === 'html') {
-      await Utils.fixCssForPrinting();
-    }
+    await Utils.fixImageExtension(TMP_DIR);
+    Utils.log('Bill data in convertHtmlToPdf: ', billData);
+    await Utils.fixCssForPrinting();
     const pdfPath = `${folderPath}/${id}.pdf`;
     Utils.log('Sleeping for 1s');
     await Utils.waitFor(1000);
@@ -176,13 +175,28 @@ const Utils = {
     }
   },
 
-  fixCssForPrinting: async () => {
-    const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/padding-top:\\s*[[:digit:]]\\+mm;/padding-top:12mm;margin-left:12mm;/' {} \\; -exec sed -i 's/<script.*<\\/script>//g;' {} \\;`;
+  fixImageExtension: async(path) => {
+    const command = `find ${path} -name 'ChartImg*' ! -name '*png' -execdir mv {} ChartImg.png \\;`;
     Utils.log(command);
-    await execPromise(command);
-    const { stderr } = execPromise(command);
+    const { stderr } = await execPromise(command);
     if (stderr) {
       Utils.log(`error: ${stderr.message}`);
+    }
+  },
+
+  fixCssForPrinting: async () => {
+    // these commands work OK on linux, not on macOS/BSD
+    const commands = [
+      `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/<script.*<\\/script>//g;' {} \\;`,
+      `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/ChartImg.axd\\S\\+"/ChartImg.png"/g;' {} \\;`
+    ];
+    for (const command of commands) {
+      Utils.log(command);
+      const { stderr, stdout } = await execPromise(command);
+      if (stderr) {
+        Utils.log(`error: ${stderr}`);
+      }
+      Utils.log(stdout);
     }
   },
 
