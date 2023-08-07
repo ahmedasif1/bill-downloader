@@ -12,10 +12,10 @@ class BillDownloader {
     Utils.setInitialConfig();
     const data = await Utils.readCustomerIds();
     Utils.log('Customer Ids to check');
-    console.log(data);
+    Utils.log(data);
     Utils.log('Reading existing Status');
     const existingStatus = Utils.readStatus();
-    console.log(existingStatus);
+    Utils.log(existingStatus);
 
     for (const billType of Object.keys(data)) {
       switch (billType) {
@@ -23,16 +23,16 @@ class BillDownloader {
         try {
           await this.handlePtclBills(data[billType], existingStatus);
         } catch (e) {
-          console.log('Exception caught while fetching ptcl bill');
-          console.log(e);
+          Utils.log('Exception caught while fetching ptcl bill');
+          Utils.log(e);
         }
         break;
       case LESCO:
         try {
           await this.handleLescoBills(data[billType], existingStatus);
         } catch (e) {
-          console.log('Exception caught while fetching lesco bill');
-          console.log(e);
+          Utils.log('Exception caught while fetching lesco bill');
+          Utils.log(e);
         }
         break;
       }
