@@ -19,7 +19,6 @@ const Utils = {
     });
   },
   chromeBinary: async () => {
-    let binaryName = null;
     let binaries = [
       'google-chrome',
       'chromium',
@@ -29,12 +28,12 @@ const Utils = {
       try {
         Utils.log('Trying binary: ', binary);
         await execPromise('command -v ' + binary);
-        binaryName = binary;
+        return binary;
       } catch (error) {
         Utils.log('Trying next binary');
       }
     }
-    return binaryName;
+    return null;
   },
 
   setInitialConfig: () => {
