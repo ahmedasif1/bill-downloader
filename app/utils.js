@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as util from 'util';
+import * as os from 'node:os';
 import { exec } from 'child_process';
 const execPromise = util.promisify(exec);
 import { format } from 'date-fns';
@@ -7,6 +8,7 @@ const DOWNLOADS_PATH = 'downloads';
 const DATA_PATH = 'data';
 const STATUS_FILE_PATH = `${DATA_PATH}/status.json`;
 const TMP_DIR = 'tmp';
+
 
 const Utils = {
   waitFor: async (timeMilliseconds) => {
@@ -17,7 +19,6 @@ const Utils = {
     });
   },
   chromeBinary: async () => {
-    let binaryName = null;
     let binaries = [
       'google-chrome',
       'chromium',
@@ -25,14 +26,14 @@ const Utils = {
     ];
     for (let binary of binaries) {
       try {
-        console.log('Trying binary');
+        Utils.log('Trying binary: ', binary);
         await execPromise('command -v ' + binary);
-        binaryName = binary;
+        return binary;
       } catch (error) {
-        console('Trying next binary');
+        Utils.log('Trying next binary');
       }
     }
-    return binaryName;
+    return null;
   },
 
   setInitialConfig: () => {
@@ -74,11 +75,11 @@ const Utils = {
     const folderPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
     Utils.makeFolder(folderPath);
     let command = `curl '${pdfUrl}' -H 'Cookie: ${cookies}' -o ${folderPath}/${fileName}`;
-    console.log(command);
+    Utils.log(command);
     const { stdout, stderr } = await execPromise(command);
                 
-    console.log(stdout);
-    console.log(stderr);
+    Utils.log(stdout);
+    Utils.log(stderr);
         
     //set permissions
     command = `chmod +r "${folderPath}/${fileName}"`;
@@ -90,7 +91,7 @@ const Utils = {
   saveWithWget: async (url, isPdf, billData, billMonthDate) => {
     const id = billData['id'];
 
-    console.log('Date value: ', billMonthDate);
+    Utils.log('Date value: ', billMonthDate);
     const billMonthFinal = format(billMonthDate, 'yyyy-MM');
 
     const folderPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
@@ -122,12 +123,12 @@ const Utils = {
   },
 
   saveStatus: (status) => {
-    console.log('Saving status');
+    Utils.log('Saving status');
     fs.writeFileSync(STATUS_FILE_PATH, JSON.stringify(status, null, 4));
   },
 
-  log: (message) => {
-    console.log(`[${format(new Date(), 'yyyy-MM-dd kk:mm:ss')}] - ${message}`);
+  log: (...message) => {
+    console.log(`[${format(new Date(), 'yyyy-MM-dd kk:mm:ss')}] - `, ...message);
   },
 
   convertHtmlToPdf: async (billData, folderPath) => {
@@ -150,9 +151,9 @@ const Utils = {
       }
       let strToPrint = 'PDF file size is too small, ';
       if (tries < 2) {
-        console.log(strToPrint, 'retrying');
+        Utils.log(strToPrint, 'retrying');
       } else {
-        console.log(strToPrint, 'throwing exception');
+        Utils.log(strToPrint, 'throwing exception');
         throw new Error('PDF file size too small');
       }
       await Utils.printToPdf(pdfPath, TMP_DIR);
@@ -194,7 +195,8 @@ const Utils = {
 
   fixCssForPrinting: async () => {
     // these commands work OK on linux, not on macOS/BSD
-    const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i 's/ChartImg.axd\\S\\+"/ChartImg.png"/g;' {} \\;`;
+    let backupFile = os.platform().includes('darwin') ? '.bak -E' : '-r';
+    const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i ${backupFile} 's/ChartImg.axd[?=\\.;%a-z0-9_&]+"/ChartImg.png"/gi;' {} \\;`;
     Utils.log(command);
     const { stderr, stdout } = await execPromise(command);
     if (stderr) {

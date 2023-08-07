@@ -20,7 +20,7 @@ class Lesco {
       try {
         await this.downloadBill(cookies, billData, accountStatus.billMonth);
       } catch (error) {
-        console.log('Exception ', error);
+        Utils.log('Exception ', error);
         accountStatus = existingStatus;
       }
     } else {
