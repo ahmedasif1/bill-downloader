@@ -17,13 +17,21 @@ const Utils = {
     });
   },
   chromeBinary: async () => {
-    let binaryName = 'google-chrome';
-    try {
-      await execPromise('command -v google-chrome');
-    } catch (error) {
-      binaryName = 'chromium';
+    let binaryName = null;
+    let binaries = [
+      'google-chrome',
+      'chromium',
+      '/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome'
+    ];
+    for (let binary of binaries) {
+      try {
+        console.log('Trying binary');
+        await execPromise('command -v ' + binary);
+        binaryName = binary;
+      } catch (error) {
+        console('Trying next binary');
+      }
     }
-
     return binaryName;
   },
 
