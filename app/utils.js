@@ -4,6 +4,8 @@ import * as os from 'node:os';
 import { exec } from 'child_process';
 const execPromise = util.promisify(exec);
 import { format } from 'date-fns';
+import { FormData } from 'node-fetch';
+import * as path from 'path';
 const DOWNLOADS_PATH = 'downloads';
 const DATA_PATH = 'data';
 const STATUS_FILE_PATH = `${DATA_PATH}/status.json`;
@@ -88,13 +90,17 @@ const Utils = {
 
   },
 
-  saveWithWget: async (url, isPdf, billData, billMonthDate) => {
-    const id = billData['id'];
-
+  getDownloadsPath: (billData, billMonthDate) => {
     Utils.log('Date value: ', billMonthDate);
     const billMonthFinal = format(billMonthDate, 'yyyy-MM');
 
-    const folderPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
+    return `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
+  },
+
+  saveWithWget: async (url, isPdf, billData, billMonthDate) => {
+    const id = billData['id'];
+
+    const folderPath = this.getDownloadsPath(billData, billMonthDate);
     Utils.makeFolder(folderPath);
 
     Utils.log(url);
@@ -208,6 +214,20 @@ const Utils = {
   parseCookies(response) {
     const raw = response.headers.raw()['set-cookie'];
     return raw.map((entry) => entry.split(';')[0]).join(';');
+  },
+
+  mapToFormData: (map) => {
+    const formData = new FormData();
+    Object.entries(map).forEach(([key, value]) => {
+      formData.append(key, value);
+    });
+    return formData;
+  },
+
+  writeTmpFile: (fileContent, relativePath) => {
+    const dirName = path.dirname(`${TMP_DIR}/${relativePath}`);
+    Utils.makeFolder(dirName);
+    return fs.writeFileSync(`${TMP_DIR}/${relativePath}`, fileContent);
   }
 
 };
