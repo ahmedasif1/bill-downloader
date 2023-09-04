@@ -217,7 +217,7 @@ const Utils = {
 
   parseCookies(response) {
     const raw = response.headers.raw()['set-cookie'];
-    return raw.map((entry) => entry.split(';')[0]).join(';');
+    return raw?.map((entry) => entry.split(';')[0]).join(';') || '';
   },
 
   mapToFormData: (map) => {
