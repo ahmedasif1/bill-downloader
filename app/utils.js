@@ -90,18 +90,18 @@ const Utils = {
 
   },
 
-  getDownloadsPath: (billData, billMonthDate) => {
+  getAndCreateDownloadsPath: (billData, billMonthDate) => {
     Utils.log('Date value: ', billMonthDate);
     const billMonthFinal = format(billMonthDate, 'yyyy-MM');
-
-    return `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
+    const folderPath = `${DOWNLOADS_PATH}/${billMonthFinal}/${billData['tag']}`;
+    Utils.makeFolder(folderPath);
+    return folderPath;
   },
 
   saveWithWget: async (url, isPdf, billData, billMonthDate) => {
     const id = billData['id'];
 
-    const folderPath = this.getDownloadsPath(billData, billMonthDate);
-    Utils.makeFolder(folderPath);
+    const folderPath = this.getAndCreateDownloadsPath(billData, billMonthDate);
 
     Utils.log(url);
     let command = `wget -e robots=off "${url}"`;
