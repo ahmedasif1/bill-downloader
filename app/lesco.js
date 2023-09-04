@@ -2,19 +2,26 @@ import { Utils } from './utils.js';
 import fetch from 'node-fetch';
 import * as Cheerio from 'cheerio';
 import { parse } from 'date-fns';
+import { Buffer } from 'buffer';
 
+const BILL_DOWNLOAD_PATH = 'http://www.lesco.gov.pk:36247/BillNew.aspx';
+const BILL_DOWNLOAD_PATH_MDI = 'http://www.lesco.gov.pk:36247/BillNewMDI.aspx';
+const CHECK_BILL_PATH = 'http://www.lesco.gov.pk/Modules/CustomerBill/CheckBill.asp';
 class Lesco {
+  lescoHostUrl = '';
+  billIdentifier = null;
   async processId(billData, existingStatus) {
     const customerId = billData['id'];
     Utils.log(`CustomerId: ${customerId}`);
-    let response = await fetch('http://www.lesco.gov.pk/Modules/CustomerBill/CheckBill.asp', { method: 'get' });
+    let response = await fetch(CHECK_BILL_PATH, { method: 'get' });
     const cookies = Utils.parseCookies(response);
+    this.lescoHostUrl = new URL(response.url).host;
     Utils.log(`Cookies: ${cookies}`);
-    const accountStatusUrl = await this.getAccountStatusUrl(cookies, customerId);
-    Utils.log(`Opening Account Status: ${accountStatusUrl}`);
-    let accountStatus = await this.getAccountStatus(cookies, accountStatusUrl);
+    const accountStatusUrlInfo = await this.getAccountStatusUrl(cookies, customerId);
+    Utils.log(`Opening Account Status: ${JSON.stringify(accountStatusUrlInfo)}`);
+    let accountStatus = await this.getAccountStatus(cookies, accountStatusUrlInfo);
     Utils.log(`Account Status: ${JSON.stringify(accountStatus)}`);
-
+    this.billIdentifier = accountStatusUrlInfo.formDataMap;
     if (this.isStatusValid(accountStatus, existingStatus)) {
       Utils.log(`Downloading bill: ${customerId}`);
       try {
@@ -38,15 +45,63 @@ class Lesco {
     const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
     const data = await response.text();
     const $ = Cheerio.load(data);
-    return `http://www.lesco.gov.pk${$('#ContentPane  a:nth-child(1)')[1].attribs['href']}`;
+    const formDataMap = {};
+    Object.values($('form.inline:nth-child(9) > input')).map(x=> x.attribs).filter(x=>x).forEach((x) => { formDataMap[x.name] = x.value; });
+    return {
+      url: $('form.inline:nth-child(9)')[0].attribs.action,
+      formDataMap: formDataMap
+    };
+  }
+
+
+  async downloadIncludedFiles(responseContent, currentPath, cookies) {
+    const $ = Cheerio.load(responseContent);
+    // css files
+    let filesToDownload = [...$('link').toArray().filter(link => link.attribs.rel ==='stylesheet').map(link => link.attribs.href)];
+    
+    //image files
+    filesToDownload = [...filesToDownload, ...$('img').toArray().map(img => img.attribs.src)];
+    filesToDownload = [...filesToDownload, ...$('script').toArray().filter(x=>x.attribs.src).map(x=>x.attribs.src)];
+    filesToDownload = filesToDownload.filter(file => !file.startsWith('http'));
+    for (let _file of filesToDownload) {
+      const file = _file.replace('./', '').replace(/^\//, '');
+      Utils.log('Downloading URL: ', `${currentPath}/${file}`);
+      const response = await fetch(`${currentPath}/${file}`,{ method: 'get', headers: { cookie: cookies } });
+      let responseData = null;
+      if (response.headers.get('Content-Type').includes('text')) {
+        responseData = await response.text();
+      } else {
+        responseData = Buffer.from(await response.arrayBuffer());
+      }
+      Utils.writeTmpFile(responseData, file.startsWith('ChartImg') ? 'ChartImg.png' : file);
+    }
   }
 
   async downloadBill(cookies, billData, billMonth) {
-    const customerId = billData['id'];
-    const response = await this.postRequest(cookies, customerId, 'btnViewBill=View/Download+Bill');
-    const contentType = response.headers.raw()['content-type'][0];
-    const isPdf = contentType.includes('pdf');
-    await Utils.saveWithWget(response.url, isPdf, billData, this.parseBillMonth(billMonth));
+    function renameKeys(obj) {
+      const entries = Object.keys(obj).map(key => {
+        const newKey = key.replace(/^str/, '').replace(/^n/,'');
+        return {[newKey]: obj[key]};
+      });
+      return Object.assign({}, ...entries);
+    }
+    const url = billData.format === 'pdf' ? BILL_DOWNLOAD_PATH : BILL_DOWNLOAD_PATH_MDI;
+    const formDataMap = renameKeys(this.billIdentifier);
+    const response = await fetch(url, {
+      method: 'post',
+      headers: { cookie: cookies },
+      body: Utils.mapToFormData(formDataMap)
+    });
+    const responseText = await response.text();
+    Utils.writeTmpFile(responseText, 'bill.html');
+
+    const responseCookies = Utils.parseCookies(response);
+
+    const parsedUrl = new URL(url);
+    await this.downloadIncludedFiles(responseText, `${parsedUrl.origin}${parsedUrl.pathname.split('/').slice(0, -1)}`, responseCookies);
+    
+    const downloadPath = Utils.getDownloadsPath(billData, this.parseBillMonth(billMonth));
+    await Utils.convertHtmlToPdf(billData, downloadPath);
   }
 
   parseBillMonth(billMonth) {
@@ -68,10 +123,10 @@ class Lesco {
 
   async getAccountStatus(cookies, url) {
     const status = { dueDate: '', amount: '', owner: '', paid: false, billMonth: '' };
-
-    await fetch(url, {
-      method: 'get',
-      headers: { cookie: cookies }
+    await fetch(url.url, {
+      method: 'post',
+      headers: { cookie: cookies },
+      body: Utils.mapToFormData(url.formDataMap)
     })
       .then(response => response.text())
       .then(async (response) => {
@@ -112,7 +167,7 @@ class Lesco {
   async postRequest(cookies, customerId, additionalFormData = '') {
     let data = `txtCustID=${customerId}&${additionalFormData}`;
     let response = null;
-    await fetch('http://www.lesco.gov.pk/Modules/CustomerBill/CustomerMenu.asp', {
+    await fetch(`http://${this.lescoHostUrl}/Modules/CustomerBill/CustomerMenu.asp`, {
       method: 'post',
       body: data,
       headers: {
