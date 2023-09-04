@@ -98,6 +98,10 @@ const Utils = {
     return folderPath;
   },
 
+  emptyTmpFolder: async () => {
+    await execPromise(`rm -rf ${TMP_DIR}`);
+  },
+
   saveWithWget: async (url, isPdf, billData, billMonthDate) => {
     const id = billData['id'];
 

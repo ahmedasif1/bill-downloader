@@ -78,6 +78,7 @@ class Lesco {
   }
 
   async downloadBill(cookies, billData, billMonth) {
+    await Utils.emptyTmpFolder();
     function renameKeys(obj) {
       const entries = Object.keys(obj).map(key => {
         const newKey = key.replace(/^str/, '').replace(/^n/,'');
