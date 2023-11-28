@@ -1,5 +1,5 @@
 import * as Cheerio from 'cheerio';
-import { parse } from 'date-fns';
+import { format, parse } from 'date-fns';
 import fetch, { FormData, Headers } from 'node-fetch';
 import { Utils } from './utils.js';
 
@@ -82,7 +82,7 @@ class Ptcl {
   async downloadPdf(downloadUrl, accountStatus) {
     Utils.log('Downloading bill for phone:', this.billData['phone']);
     const parsedBillMonth = parse(`10-${accountStatus.billMonth}`, 'dd-MMM. yyyy', new Date());
-    return Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}.pdf`);
+    return Utils.downloadWithCurl(downloadUrl, this.cookies, this.billData, parsedBillMonth, `PTCL-${this.billData['phone']}_${format(parsedBillMonth, 'yyyy-MM')}.pdf`);
   }
 
   async readHiddenFields(response) {

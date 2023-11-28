@@ -126,7 +126,7 @@ const Utils = {
     if (!isPdf) {
       Utils.log('Sleeping for 1s');
       await Utils.waitFor(1000);
-      await Utils.convertHtmlToPdf(billData, folderPath);
+      await Utils.convertHtmlToPdf(billData, folderPath, billMonthDate);
     }
     Utils.log('Bill Downloaded');
 
@@ -141,13 +141,14 @@ const Utils = {
     console.log(`[${format(new Date(), 'yyyy-MM-dd kk:mm:ss')}] - `, ...message);
   },
 
-  convertHtmlToPdf: async (billData, folderPath) => {
-    const id = billData['id'];
+  convertHtmlToPdf: async (billData, folderPath, billMonth) => {
+    const pdfName = `${billData['id']}_${format(billMonth, 'yyyy-MM')}`;
+
     await Utils.addHtmlExtension(TMP_DIR);
     await Utils.fixImageExtension(TMP_DIR);
     Utils.log('Bill data in convertHtmlToPdf: ', billData);
     await Utils.fixCssForPrinting();
-    const pdfPath = `${folderPath}/${id}.pdf`;
+    const pdfPath = `${folderPath}/${pdfName}.pdf`;
     Utils.log('Sleeping for 1s');
     await Utils.waitFor(1000);
     await Utils.printToPdf(pdfPath, TMP_DIR);
