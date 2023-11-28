@@ -102,7 +102,7 @@ class Lesco {
     await this.downloadIncludedFiles(responseText, `${parsedUrl.origin}${parsedUrl.pathname.split('/').slice(0, -1)}`, responseCookies);
     
     const downloadPath = Utils.getAndCreateDownloadsPath(billData, this.parseBillMonth(billMonth));
-    await Utils.convertHtmlToPdf(billData, downloadPath, billMonth);
+    await Utils.convertHtmlToPdf(billData, downloadPath, this.parseBillMonth(billMonth));
   }
 
   parseBillMonth(billMonth) {
