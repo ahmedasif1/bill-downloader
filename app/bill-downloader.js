@@ -1,11 +1,13 @@
 import { Utils } from './utils.js';
 import { Lesco } from './lesco.js';
 import { Ptcl } from './ptcl.js';
+import { intializeMailerTransport, sendBillEmail } from './mailer.js';
 
 const PTCL = 'ptcl';
 const LESCO = 'lesco';
 class BillDownloader {
   async start() {
+    
     Utils.log('Starting checking bills');
 
     Utils.log('Verifying directories');
@@ -41,13 +43,28 @@ class BillDownloader {
     Utils.log('Exiting now');
   }
 
+  async sendEmailWithMailer(toAddress, id, billStatus) {
+    if (!this.mailerInitialized) {
+      Utils.log('Initializing mail sender');
+      await intializeMailerTransport();
+      this.mailerInitialized = true;
+    }
+    await sendBillEmail(toAddress, id, billStatus, billStatus.filePath);
+  }
+
   async handleLescoBills(data, fullStatus) {
-    const newStatus = { ...fullStatus[LESCO] };
+    const lescoStatus = { ...fullStatus[LESCO] };
     const lescoDownloader = new Lesco();
     for (const billData of data) {
       const { id } = billData;
-      newStatus[id] = await lescoDownloader.processId(billData, newStatus[id]);
-      fullStatus[LESCO] = newStatus;
+      const existingStatus = lescoStatus[id];
+      const newStatus = await lescoDownloader.processId(billData, existingStatus);
+      lescoStatus[id] = newStatus;
+      if (((!existingStatus && newStatus) || (existingStatus.billMonth != newStatus.billMonth)) && billData.email) {
+        Utils.log('Going to send email to ', billData.email, 'for bill ', JSON.stringify(newStatus));
+        await this.sendEmailWithMailer(billData.email, id, newStatus);
+      }
+      fullStatus[LESCO] = lescoStatus;
       Utils.saveStatus(fullStatus);
     }
   }

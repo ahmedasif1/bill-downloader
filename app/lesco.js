@@ -1,7 +1,7 @@
 import { Utils } from './utils.js';
 import fetch from 'node-fetch';
 import * as Cheerio from 'cheerio';
-import { parse } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { Buffer } from 'buffer';
 
 const BILL_DOWNLOAD_PATH = 'http://www.lesco.gov.pk:36247/BillNew.aspx';
@@ -25,7 +25,8 @@ class Lesco {
     if (this.isStatusValid(accountStatus, existingStatus)) {
       Utils.log(`Downloading bill: ${customerId}`);
       try {
-        await this.downloadBill(cookies, billData, accountStatus.billMonth);
+        const filePath = await this.downloadBill(cookies, billData, accountStatus.billMonth);
+        accountStatus.filePath = filePath;
       } catch (error) {
         Utils.log('Exception ', error);
         accountStatus = existingStatus;
@@ -100,9 +101,10 @@ class Lesco {
 
     const parsedUrl = new URL(url);
     await this.downloadIncludedFiles(responseText, `${parsedUrl.origin}${parsedUrl.pathname.split('/').slice(0, -1)}`, responseCookies);
-    
-    const downloadPath = Utils.getAndCreateDownloadsPath(billData, this.parseBillMonth(billMonth));
-    await Utils.convertHtmlToPdf(billData, downloadPath, this.parseBillMonth(billMonth));
+    const billMonthParsed = this.parseBillMonth(billMonth);
+    const downloadPath = Utils.getAndCreateDownloadsPath(billData, billMonthParsed);
+    await Utils.convertHtmlToPdf(billData, downloadPath, billMonthParsed);
+    return `${downloadPath}/${billData['id']}_${format(billMonthParsed, 'yyyy-MM')}.pdf`;
   }
 
   parseBillMonth(billMonth) {
