@@ -8,3 +8,4 @@ logs
 tmp
 customer_ids.json
 customer_ids.txt
+mailer-config.json
