@@ -33,3 +33,19 @@ downloads:
         - PTCL_phone_num.pdf
 
 ```
+
+### Emails
+Support has been added to send emails whenever a new bill is encountered. To configure it, create a new file mailer-config.json having the SMTP setting similar to below
+```json
+{
+"service": "gmail",
+"host": "smtp.gmail.com",
+"port": 587,
+"secure": false,
+"auth": {
+  "user": "USERNAME",
+  "pass": "PASSWORD"
+  }
+}
+```
+Add the email field in customer_ids.json file.
