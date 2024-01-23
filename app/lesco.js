@@ -54,7 +54,7 @@ class Lesco {
     const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
     const data = await response.text();
     const $ = Cheerio.load(data);
-    await this.getCaptcha(cookies);
+    await this.generateCaptcha(cookies);
     const formDataMap = {};
     Object.values($('form.inline:nth-child(9) > input')).map(x=> x.attribs).filter(x=>x).forEach((x) => { formDataMap[x.name] = x.value; });
     return {
