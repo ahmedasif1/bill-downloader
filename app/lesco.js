@@ -4,9 +4,11 @@ import * as Cheerio from 'cheerio';
 import { format, parse } from 'date-fns';
 import { Buffer } from 'buffer';
 
-const BILL_DOWNLOAD_PATH = 'http://www.lesco.gov.pk:36247/BillNew.aspx';
+const BILL_DOWNLOAD_PATH = 'http://www.lesco.gov.pk:36247/Bill.aspx';
 const BILL_DOWNLOAD_PATH_MDI = 'http://www.lesco.gov.pk:36247/BillNewMDI.aspx';
 const CHECK_BILL_PATH = 'http://www.lesco.gov.pk/Modules/CustomerBill/CheckBill.asp';
+const STATIC_CAPTCHA = '1234';
+
 class Lesco {
   lescoHostUrl = '';
   billIdentifier = null;
@@ -42,10 +44,17 @@ class Lesco {
     return (status?.dueDate && (!existingStatus || status.dueDate != existingStatus.dueDate));
   }
 
+  async generateCaptcha(cookies) {
+    const captchaUrl = `http://${this.lescoHostUrl}/Web/GenerateCaptcha.aspx?code=${STATIC_CAPTCHA}&Usecode=1`;
+    console.log(captchaUrl);
+    await fetch(captchaUrl, { method: 'get', headers: { cookie: cookies }}).then();
+  }
+  
   async getAccountStatusUrl(cookies, customerId) {
     const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
     const data = await response.text();
     const $ = Cheerio.load(data);
+    await this.generateCaptcha(cookies);
     const formDataMap = {};
     Object.values($('form.inline:nth-child(9) > input')).map(x=> x.attribs).filter(x=>x).forEach((x) => { formDataMap[x.name] = x.value; });
     return {
@@ -89,6 +98,7 @@ class Lesco {
     }
     const url = billData.format === 'pdf' ? BILL_DOWNLOAD_PATH : BILL_DOWNLOAD_PATH_MDI;
     const formDataMap = renameKeys(this.billIdentifier);
+    formDataMap['CapCode'] = STATIC_CAPTCHA;
     const response = await fetch(url, {
       method: 'post',
       headers: { cookie: cookies },

@@ -207,7 +207,7 @@ const Utils = {
   fixCssForPrinting: async () => {
     // these commands work OK on linux, not on macOS/BSD
     let backupFile = os.platform().includes('darwin') ? '.bak -E' : '-r';
-    const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i ${backupFile} 's/ChartImg.axd[\\/?=\\.;%a-z0-9_&]+"/ChartImg.png"/gi;' {} \\;`;
+    const command = `find ${TMP_DIR} -name 'bill.html' -exec sed -i ${backupFile} 's/\\/ChartImg.axd[\\/?=\\.;%a-z0-9_&]+"/.\\/ChartImg.png"/gi;' {} \\;`;
     Utils.log(command);
     const { stderr, stdout } = await execPromise(command);
     if (stderr) {
