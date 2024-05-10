@@ -32,7 +32,7 @@ const Utils = {
         await execPromise('command -v ' + binary);
         return binary;
       } catch (error) {
-        Utils.log('Trying next binary');
+        Utils.log(error, 'Trying next binary');
       }
     }
     return null;
