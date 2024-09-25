@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 const BILL_DOWNLOAD_PATH = 'http://www.lesco.gov.pk:36247/Bill.aspx';
 const BILL_DOWNLOAD_PATH_MDI = 'http://www.lesco.gov.pk:36247/BillNewMDI.aspx';
-const CHECK_BILL_PATH = 'http://www.lesco.gov.pk/Modules/CustomerBill/CheckBill.asp';
+const CHECK_BILL_PATH = 'http://www.lesco.gov.pk/Modules/CustomerBillN/CheckBill.asp';
 const STATIC_CAPTCHA = '1234';
 
 class Lesco {
@@ -20,6 +20,7 @@ class Lesco {
     this.lescoHostUrl = new URL(response.url).host;
     Utils.log(`Cookies: ${cookies}`);
     const accountStatusUrlInfo = await this.getAccountStatusUrl(cookies, customerId);
+    console.log(accountStatusUrlInfo);
     Utils.log(`Opening Account Status: ${JSON.stringify(accountStatusUrlInfo)}`);
     let accountStatus = await this.getAccountStatus(cookies, accountStatusUrlInfo);
     Utils.log(`Account Status: ${JSON.stringify(accountStatus)}`);
@@ -56,9 +57,18 @@ class Lesco {
     const $ = Cheerio.load(data);
     await this.generateCaptcha(cookies);
     const formDataMap = {};
-    Object.values($('form.inline:nth-child(9) > input')).map(x=> x.attribs).filter(x=>x).forEach((x) => { formDataMap[x.name] = x.value; });
+    const forms = $('.checkbill_table form.inline')
+    // for (const form of forms) {
+    //   // console.log('form', form);
+    //   console.log(form.attribs.action.includes('AccountStatus'));
+    //   console.log('formended awdawdwad');
+    // }
+    // console.log(forms.map(x => x.name));
+    Object.values($('.checkbill_table form.inline > input')).map(x=> x.attribs).filter(x => x).forEach((x) => { formDataMap[x.name] = x.value; });
+    Object.values($('.checkbill_table form.inline > button')).map(x=> x.attribs).filter(x => x).forEach((x) => { formDataMap[x.name] = x.value; });
+
     return {
-      url: $('form.inline:nth-child(9)')[0].attribs.action,
+      url: 'http://www.lesco.gov.pk:36269/Modules/CustomerBillN/AccountStatus.aspx',
       formDataMap: formDataMap
     };
   }
@@ -144,17 +154,16 @@ class Lesco {
       .then(response => response.text())
       .then(async (response) => {
         const $ = Cheerio.load(response);
-        const table = $('.MemTab')[0];
-        const tbody = table.childNodes.find(x => x.name == 'tbody');
-        const rows = tbody.childNodes.filter(x => x.name == 'tr');
-
-        status.dueDate = this.getFieldValue(['due date'], rows);
-        status.amount = this.getFieldValue(['amount', 'within'], rows);
-        status.owner = this.getFieldValue(['customer name'], rows);
-        const paymentDate = this.getFieldValue(['payment', 'date'], rows);
+        const container = $('.AccountStatus')[0];
+        const rows = container.childNodes.filter(x => x.name == 'div' && x.attribs.class?.includes('row')).flat();
+        const columns = rows.map(row => ([...row.childNodes])).flat().filter(x => x.attribs?.class?.includes('col'))
+        status.dueDate = this.getFieldValue('Due Date:', columns);
+        status.amount = this.getFieldValue('Amount Payable Within Due Date:', columns);
+        status.owner = this.getFieldValue('Customer Name:', columns);
+        const paymentDate = this.getFieldValue('Payment Date:', columns);
         status.paid = paymentDate?.trim() && paymentDate.toLowerCase() != 'n/a'
           && paymentDate.toLowerCase() != 'na' && !!paymentDate;
-        status.billMonth = this.getFieldValue(['bill month'], rows);
+        status.billMonth = this.getFieldValue('Last Bill Month:', columns);
 
       });
     return status;
@@ -163,14 +172,13 @@ class Lesco {
   getFieldValue(fieldNamesToFind, rows) {
     for (let row of rows) {
       if (row.childNodes) {
-        const cells = row.childNodes.filter(c => c.name == 'td');
-        const fieldName = this.getInnerValue(cells[0]);
-        if (fieldName) {
-          const reducer = (v1, v2) => v1 && v2;
-          const individualResult = fieldNamesToFind.map(toFind => fieldName.toLowerCase().includes(toFind.toLowerCase()));
-          if (individualResult.reduce(reducer)) {
-            return this.getInnerValue(cells[1]);
-          }
+        const heading = row.childNodes.filter(c => c.name == 'h5')[0];
+        const headingName = heading?.children?.[0]?.data;
+        if (headingName === fieldNamesToFind) {
+          console.log(fieldNamesToFind);
+          const valueField = row.children.filter(x => x.name =='strong')[0];
+          console.log(valueField);
+          return valueField.children[0].data 
         }
       }
     }
@@ -180,7 +188,7 @@ class Lesco {
   async postRequest(cookies, customerId, additionalFormData = '') {
     let data = `txtCustID=${customerId}&${additionalFormData}`;
     let response = null;
-    await fetch(`http://${this.lescoHostUrl}/Modules/CustomerBill/CustomerMenu.asp`, {
+    await fetch(`http://${this.lescoHostUrl}/Modules/CustomerBillN/CustomerMenu.asp`, {
       method: 'post',
       body: data,
       headers: {
