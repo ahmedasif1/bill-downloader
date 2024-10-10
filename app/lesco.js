@@ -20,7 +20,6 @@ class Lesco {
     this.lescoHostUrl = new URL(response.url).host;
     Utils.log(`Cookies: ${cookies}`);
     const accountStatusUrlInfo = await this.getAccountStatusUrl(cookies, customerId);
-    console.log(accountStatusUrlInfo);
     Utils.log(`Opening Account Status: ${JSON.stringify(accountStatusUrlInfo)}`);
     let accountStatus = await this.getAccountStatus(cookies, accountStatusUrlInfo);
     Utils.log(`Account Status: ${JSON.stringify(accountStatus)}`);
@@ -28,7 +27,7 @@ class Lesco {
     if (this.isStatusValid(accountStatus, existingStatus)) {
       Utils.log(`Downloading bill: ${customerId}`);
       try {
-        const filePath = await this.downloadBill(cookies, billData, accountStatus.billMonth);
+        const filePath = await this.downloadBill(cookies, billData, accountStatus.billMonth, accountStatusUrlInfo.billDownloadUrl);
         accountStatus.filePath = filePath;
       } catch (error) {
         Utils.log('Exception ', error);
@@ -47,29 +46,40 @@ class Lesco {
 
   async generateCaptcha(cookies) {
     const captchaUrl = `http://${this.lescoHostUrl}/Web/GenerateCaptcha.aspx?code=${STATIC_CAPTCHA}&Usecode=1`;
-    console.log(captchaUrl);
+    Utils.log(captchaUrl);
     await fetch(captchaUrl, { method: 'get', headers: { cookie: cookies }}).then();
   }
   
+  getNextUrl(currentUrl, nextPath) {
+    if (nextPath.startsWith('http')) {
+      return nextPath;
+    } else if (nextPath.startsWith('/')) {
+      const urlObject = new URL(currentUrl);
+      urlObject.pathname = nextPath;
+      return urlObject.href;
+    } else {
+      const urlObject = new URL(currentUrl);
+      urlObject.pathname = urlObject.pathname.replace(/[^/]+$/, nextPath);
+      return urlObject.href;
+    }
+  }
+
   async getAccountStatusUrl(cookies, customerId) {
     const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
     const data = await response.text();
     const $ = Cheerio.load(data);
     await this.generateCaptcha(cookies);
     const formDataMap = {};
-    const forms = $('.checkbill_table form.inline')
-    // for (const form of forms) {
-    //   // console.log('form', form);
-    //   console.log(form.attribs.action.includes('AccountStatus'));
-    //   console.log('formended awdawdwad');
-    // }
-    // console.log(forms.map(x => x.name));
+    const form = $('.checkbill_table form.inline[action*="AccountStatus"]')
+    const downloadBillUrl = this.getNextUrl(response.url, $('.billform').attr('action'))
+
+    const newUrl = this.getNextUrl(response.url, form.attr('action'));
     Object.values($('.checkbill_table form.inline > input')).map(x=> x.attribs).filter(x => x).forEach((x) => { formDataMap[x.name] = x.value; });
     Object.values($('.checkbill_table form.inline > button')).map(x=> x.attribs).filter(x => x).forEach((x) => { formDataMap[x.name] = x.value; });
-
     return {
-      url: 'http://www.lesco.gov.pk:36269/Modules/CustomerBillN/AccountStatus.aspx',
-      formDataMap: formDataMap
+      accountStatusUrl: newUrl,
+      formDataMap: formDataMap,
+      billDownloadUrl: downloadBillUrl.includes('MDI') ? BILL_DOWNLOAD_PATH_MDI : BILL_DOWNLOAD_PATH
     };
   }
 
@@ -97,7 +107,7 @@ class Lesco {
     }
   }
 
-  async downloadBill(cookies, billData, billMonth) {
+  async downloadBill(cookies, billData, billMonth, downloadUrl) {
     await Utils.emptyTmpFolder();
     function renameKeys(obj) {
       const entries = Object.keys(obj).map(key => {
@@ -106,7 +116,7 @@ class Lesco {
       });
       return Object.assign({}, ...entries);
     }
-    const url = billData.format === 'pdf' ? BILL_DOWNLOAD_PATH : BILL_DOWNLOAD_PATH_MDI;
+    const url = downloadUrl;
     const formDataMap = renameKeys(this.billIdentifier);
     formDataMap['CapCode'] = STATIC_CAPTCHA;
     const response = await fetch(url, {
@@ -114,6 +124,8 @@ class Lesco {
       headers: { cookie: cookies },
       body: Utils.mapToFormData(formDataMap)
     });
+
+
     const responseText = await response.text();
     Utils.writeTmpFile(responseText, 'bill.html');
 
@@ -144,12 +156,12 @@ class Lesco {
   }
 
 
-  async getAccountStatus(cookies, url) {
+  async getAccountStatus(cookies, accountStatusUrlInfo) {
     const status = { dueDate: '', amount: '', owner: '', paid: false, billMonth: '' };
-    await fetch(url.url, {
+    await fetch(accountStatusUrlInfo.accountStatusUrl, {
       method: 'post',
       headers: { cookie: cookies },
-      body: Utils.mapToFormData(url.formDataMap)
+      body: Utils.mapToFormData(accountStatusUrlInfo.formDataMap)
     })
       .then(response => response.text())
       .then(async (response) => {
@@ -175,9 +187,7 @@ class Lesco {
         const heading = row.childNodes.filter(c => c.name == 'h5')[0];
         const headingName = heading?.children?.[0]?.data;
         if (headingName === fieldNamesToFind) {
-          console.log(fieldNamesToFind);
           const valueField = row.children.filter(x => x.name =='strong')[0];
-          console.log(valueField);
           return valueField.children[0].data 
         }
       }
