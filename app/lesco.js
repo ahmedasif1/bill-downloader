@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 const BILL_DOWNLOAD_PATH = 'http://www.lesco.gov.pk:36247/Bill.aspx';
 const BILL_DOWNLOAD_PATH_MDI = 'http://www.lesco.gov.pk:36247/BillNewMDI.aspx';
-const CHECK_BILL_PATH = 'http://www.lesco.gov.pk/Modules/CustomerBillN/CheckBill.asp';
+const CHECK_BILL_PATH = 'http://www.lesco.gov.pk/Modules/CustomerBillNC/CheckBill.asp';
 const STATIC_CAPTCHA = '1234';
 
 class Lesco {
@@ -18,6 +18,8 @@ class Lesco {
     let response = await fetch(CHECK_BILL_PATH, { method: 'get' });
     const cookies = Utils.parseCookies(response);
     this.lescoHostUrl = new URL(response.url).host;
+    console.log('LESCO Host URL', lescoHostUrl)
+
     Utils.log(`Cookies: ${cookies}`);
     const accountStatusUrlInfo = await this.getAccountStatusUrl(cookies, customerId);
     Utils.log(`Opening Account Status: ${JSON.stringify(accountStatusUrlInfo)}`);
@@ -45,7 +47,7 @@ class Lesco {
   }
 
   async generateCaptcha(cookies) {
-    const captchaUrl = `http://${this.lescoHostUrl}/Web/GenerateCaptcha.aspx?code=${STATIC_CAPTCHA}&Usecode=1`;
+    const captchaUrl = `https://${this.lescoHostUrl}/Web/GenerateCaptcha.aspx?code=${STATIC_CAPTCHA}&Usecode=1`;
     Utils.log(captchaUrl);
     await fetch(captchaUrl, { method: 'get', headers: { cookie: cookies }}).then();
   }
@@ -66,14 +68,18 @@ class Lesco {
 
   async getAccountStatusUrl(cookies, customerId) {
     const response = await this.postRequest(cookies, customerId, 'btnViewMenu=Customer+Menu');
+    
     const data = await response.text();
     const $ = Cheerio.load(data);
+    console.log('Going to Generate Captcha');
     await this.generateCaptcha(cookies);
     const formDataMap = {};
     const form = $('.checkbill_table form.inline[action*="AccountStatus"]')
     const downloadBillUrl = this.getNextUrl(response.url, $('.billform').attr('action'))
 
     const newUrl = this.getNextUrl(response.url, form.attr('action'));
+    console.log('New URL', newUrl);
+    // Get all form data
     Object.values($('.checkbill_table form.inline > input')).map(x=> x.attribs).filter(x => x).forEach((x) => { formDataMap[x.name] = x.value; });
     Object.values($('.checkbill_table form.inline > button')).map(x=> x.attribs).filter(x => x).forEach((x) => { formDataMap[x.name] = x.value; });
     return {
@@ -198,14 +204,17 @@ class Lesco {
   async postRequest(cookies, customerId, additionalFormData = '') {
     let data = `txtCustID=${customerId}&${additionalFormData}`;
     let response = null;
-    await fetch(`http://${this.lescoHostUrl}/Modules/CustomerBillN/CustomerMenu.asp`, {
+    Utils.log('URL: ', `https://${this.lescoHostUrl}/Modules/CustomerBillN/CustomerMenu.asp`);
+    await fetch(`https://${this.lescoHostUrl}/Modules/CustomerBillN/CustomerMenu.asp`, {
       method: 'post',
       body: data,
       headers: {
         cookie: cookies,
         'accept': '*/*', 'Content-Type': 'application/x-www-form-urlencoded'
       }
-    }).then(async (res) => response = res);
+    }).then(async (res) => response = res).catch((err) => {
+      Utils.log('Error', err);
+    })
     return response;
   }
 
