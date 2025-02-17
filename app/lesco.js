@@ -18,7 +18,7 @@ class Lesco {
     let response = await fetch(CHECK_BILL_PATH, { method: 'get' });
     const cookies = Utils.parseCookies(response);
     this.lescoHostUrl = new URL(response.url).host;
-    console.log('LESCO Host URL', lescoHostUrl)
+    console.log('LESCO Host URL', this.lescoHostUrl)
 
     Utils.log(`Cookies: ${cookies}`);
     const accountStatusUrlInfo = await this.getAccountStatusUrl(cookies, customerId);
