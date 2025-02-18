@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "eslint": "npx eslint app/ index.js --config .eslintrc.json --ext .js,.jsx,.ts,.tsx"
+    "eslint": "npx eslint app/ index.js --config .eslint.config.js"
   },
   "author": "Ahmed",
   "license": "ISC",
@@ -17,6 +17,6 @@
     "nodemailer": "^6.10.0"
   },
   "devDependencies": {
-    "eslint": "^9.4.0"
+    "eslint": "^9.20.0"
   }
 }

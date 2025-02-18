@@ -18,7 +18,7 @@ class Lesco {
     let response = await fetch(CHECK_BILL_PATH, { method: 'get' });
     const cookies = Utils.parseCookies(response);
     this.lescoHostUrl = new URL(response.url).host;
-    console.log('LESCO Host URL', this.lescoHostUrl)
+    console.log('LESCO Host URL', this.lescoHostUrl);
 
     Utils.log(`Cookies: ${cookies}`);
     const accountStatusUrlInfo = await this.getAccountStatusUrl(cookies, customerId);
@@ -74,8 +74,8 @@ class Lesco {
     console.log('Going to Generate Captcha');
     await this.generateCaptcha(cookies);
     const formDataMap = {};
-    const form = $('.checkbill_table form.inline[action*="AccountStatus"]')
-    const downloadBillUrl = this.getNextUrl(response.url, $('.billform').attr('action'))
+    const form = $('.checkbill_table form.inline[action*="AccountStatus"]');
+    const downloadBillUrl = this.getNextUrl(response.url, $('.billform').attr('action'));
 
     const newUrl = this.getNextUrl(response.url, form.attr('action'));
     console.log('New URL', newUrl);
@@ -174,7 +174,7 @@ class Lesco {
         const $ = Cheerio.load(response);
         const container = $('.AccountStatus')[0];
         const rows = container.childNodes.filter(x => x.name == 'div' && x.attribs.class?.includes('row')).flat();
-        const columns = rows.map(row => ([...row.childNodes])).flat().filter(x => x.attribs?.class?.includes('col'))
+        const columns = rows.map(row => ([...row.childNodes])).flat().filter(x => x.attribs?.class?.includes('col'));
         status.dueDate = this.getFieldValue('Due Date:', columns);
         status.amount = this.getFieldValue('Amount Payable Within Due Date:', columns);
         status.owner = this.getFieldValue('Customer Name:', columns);
@@ -194,7 +194,7 @@ class Lesco {
         const headingName = heading?.children?.[0]?.data;
         if (headingName === fieldNamesToFind) {
           const valueField = row.children.filter(x => x.name =='strong')[0];
-          return valueField.children[0].data 
+          return valueField.children[0].data;
         }
       }
     }
@@ -214,7 +214,7 @@ class Lesco {
       }
     }).then(async (res) => response = res).catch((err) => {
       Utils.log('Error', err);
-    })
+    });
     return response;
   }
 

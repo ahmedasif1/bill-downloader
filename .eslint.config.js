@@ -18,7 +18,7 @@ export default [
                 "single"
             ],
             "semi": [
-                "error",
+                "warning",
                 "always"
             ]
         },
