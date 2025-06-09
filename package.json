@@ -11,7 +11,7 @@
   "author": "Ahmed",
   "license": "ISC",
   "dependencies": {
-    "cheerio": "^1.0.0",
+    "cheerio": "^1.1.0",
     "date-fns": "^4.1.0",
     "node-fetch": "^3.3.2",
     "nodemailer": "^6.10.0"
