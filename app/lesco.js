@@ -4,9 +4,9 @@ import * as Cheerio from 'cheerio';
 import { format, parse } from 'date-fns';
 import { Buffer } from 'buffer';
 
-const BILL_DOWNLOAD_PATH = 'http://www.lesco.gov.pk:36247/Bill.aspx';
-const BILL_DOWNLOAD_PATH_MDI = 'http://www.lesco.gov.pk:36247/BillNewMDI.aspx';
-const CHECK_BILL_PATH = 'http://www.lesco.gov.pk/Modules/CustomerBillNC/CheckBill.asp';
+const BILL_DOWNLOAD_PATH = 'https://bill.lesco.gov.pk:36260/Bill.aspx';
+const BILL_DOWNLOAD_PATH_MDI = 'https://bill.lesco.gov.pk:36260/BillNewMDI.aspx';
+const CHECK_BILL_PATH = 'https://www.lesco.gov.pk/Modules/CustomerBillNC/CheckBill.asp';
 const STATIC_CAPTCHA = '1234';
 
 class Lesco {
@@ -96,7 +96,7 @@ class Lesco {
     let filesToDownload = [...$('link').toArray().filter(link => link.attribs.rel ==='stylesheet').map(link => link.attribs.href)];
     
     //image files
-    filesToDownload = [...filesToDownload, ...$('img').toArray().map(img => img.attribs.src)];
+    filesToDownload = [...filesToDownload, ...$('img').toArray().map(img => img.attribs.src).filter(src => !(src.startsWith('data')))];
     filesToDownload = [...filesToDownload, ...$('script').toArray().filter(x=>x.attribs.src).map(x=>x.attribs.src)];
     filesToDownload = filesToDownload.filter(file => !file.startsWith('http'));
     for (let _file of filesToDownload) {
