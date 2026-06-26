@@ -31,6 +31,9 @@ jobs:
           node-version: 24
           cache: 'pnpm'
       
+      - name: enable Npm with corepack
+      - run: corepack enable pnpm
+
       - name: pNpm install
         run: pnpm install
 
