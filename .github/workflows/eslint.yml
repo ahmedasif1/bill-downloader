@@ -23,22 +23,26 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
+      
+      - name: enable Npm with corepack
+        run: corepack enable pnpm
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
-          cache: 'npm'
-      
-      - name: Npm install
-        run: npm install
+          node-version: 24
+          cache: 'pnpm'
 
-      - name: Reviewdog - Eslint
-        uses: reviewdog/action-eslint@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-pr-check
-          eslint_flags: "--config .eslint.config.js"
+      - name: pNpm install
+        run: pnpm install
 
+# 1. Install the standalone reviewdog binary on the runner
+      - name: Setup Reviewdog
+        uses: reviewdog/action-setup@v1
 
+      - name: Run ESLint with Reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pnpm exec eslint . -f stylish | reviewdog -f=eslint -reporter=github-pr-check -level=error
