@@ -23,16 +23,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: 'pnpm'
+        uses: actions/checkout@v5
       
       - name: enable Npm with corepack
         run: corepack enable pnpm
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'pnpm'
 
       - name: pNpm install
         run: pnpm install
